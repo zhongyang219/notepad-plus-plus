@@ -1,4 +1,4 @@
-// this file is part of notepad++
+﻿// this file is part of notepad++
 // Copyright (C)2020 Harry <harrybharry@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or

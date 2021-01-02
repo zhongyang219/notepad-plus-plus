@@ -1,4 +1,4 @@
-// This file is part of Notepad++ project
+﻿// This file is part of Notepad++ project
 // Copyright (C)2020 Don HO <don.h@free.fr>
 //
 // This program is free software; you can redistribute it and/or
@@ -1464,7 +1464,7 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
     }
 	setSpecialIndicator(*pStyle);
 
-    // Il faut surtout faire un test ici avant d'ex�cuter SCI_SETCODEPAGE
+    // Il faut surtout faire un test ici avant d'exécuter SCI_SETCODEPAGE
     // Sinon y'aura un soucis de performance!
 	if (isCJK())
 	{
@@ -1995,14 +1995,14 @@ void ScintillaEditView::getCurrentFoldStates(std::vector<size_t> & lineStateVect
 
 	do {
 		contractedFoldHeaderLine = static_cast<size_t>(execute(SCI_CONTRACTEDFOLDNEXT, contractedFoldHeaderLine));
-		if (contractedFoldHeaderLine != -1)
+		if (contractedFoldHeaderLine > 0)
 		{
 			//-- Store contracted line
 			lineStateVector.push_back(contractedFoldHeaderLine);
 			//-- Start next search with next line
 			++contractedFoldHeaderLine;
 		}
-	} while (contractedFoldHeaderLine != -1);
+	} while (contractedFoldHeaderLine > 0);
 }
 
 void ScintillaEditView::syncFoldStateWith(const std::vector<size_t> & lineStateVectorNew)

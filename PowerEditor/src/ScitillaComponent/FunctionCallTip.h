@@ -1,4 +1,4 @@
-// this file is part of Notepad++
+﻿// this file is part of Notepad++
 // Copyright (C)2008 Harry Bruin <harrybharry@users.sourceforge.net>
 // 
 // This program is free software; you can redistribute it and/or

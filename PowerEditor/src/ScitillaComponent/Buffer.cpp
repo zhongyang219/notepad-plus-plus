@@ -1,4 +1,4 @@
-// This file is part of Notepad++ project
+﻿// This file is part of Notepad++ project
 // Copyright (C)2020 Don HO <don.h@free.fr>
 //
 // This program is free software; you can redistribute it and/or
@@ -514,8 +514,11 @@ void FileManager::checkFilesystemChanges(bool bCheckOnlyCurrentBuffer)
 {
 	if (bCheckOnlyCurrentBuffer)
 	{
-		Buffer* buffer = _pNotepadPlus->getCurrentBuffer();
-		buffer->checkFileState();
+        if (_pNotepadPlus != nullptr)
+        {
+            Buffer* buffer = _pNotepadPlus->getCurrentBuffer();
+            buffer->checkFileState();
+        }
 	}
 	else
 	{
