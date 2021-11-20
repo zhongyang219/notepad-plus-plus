@@ -1,29 +1,18 @@
 // This file is part of Notepad++ project
-// Copyright (C)2020 Don HO <don.h@free.fr>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// Note that the GPL places important restrictions on "derived works", yet
-// it does not provide a detailed definition of that term.  To avoid      
-// misunderstandings, we consider an application to constitute a          
-// "derivative work" for the purpose of this license if it does any of the
-// following:                                                             
-// 1. Integrates source code from Notepad++.
-// 2. Integrates/includes/aggregates Notepad++ into a proprietary executable
-//    installer, such as those produced by InstallShield.
-// 3. Links to a library or executes a program that does any of the above.
+// Copyright (C)2021 Don HO <don.h@free.fr>
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <shlwapi.h>
 #include "ScintillaEditView.h"
@@ -403,7 +392,7 @@ void FunctionParser::funcParse(std::vector<foundInfo> & foundInfos, size_t begin
 	int targetEnd = 0;
 	
 	//foundInfos.clear();
-	while (targetStart != -1 && targetStart != -2)
+	while (targetStart >= 0)
 	{
 		targetStart = int((*ppEditView)->execute(SCI_GETTARGETSTART));
 		targetEnd = int((*ppEditView)->execute(SCI_GETTARGETEND));
@@ -436,7 +425,7 @@ void FunctionParser::funcParse(std::vector<foundInfo> & foundInfos, size_t begin
 				fi._pos = foundPos;
 			}
 
-			if (not classStructName.empty())
+			if (!classStructName.empty())
 			{
 				fi._data2 = classStructName;
 				fi._pos2 = -1; // change -1 valeur for validated data2
@@ -482,7 +471,7 @@ generic_string FunctionParser::parseSubLevel(size_t begin, size_t end, std::vect
 	const TCHAR *regExpr2search = dataToSearch[0].c_str();
 	int targetStart = (*ppEditView)->searchInTarget(regExpr2search, lstrlen(regExpr2search), begin, end);
 
-	if (targetStart == -1 || targetStart == -2)
+	if (targetStart < 0)
 	{
 		foundPos = -1;
 		return generic_string();
@@ -543,7 +532,7 @@ size_t FunctionZoneParser::getBodyClosePos(size_t begin, const TCHAR *bodyOpenSy
 
 	do
 	{
-		if (targetStart != -1 && targetStart != -2) // found open or close symbol
+		if (targetStart >= 0) // found open or close symbol
 		{
 			targetEnd = (*ppEditView)->execute(SCI_GETTARGETEND);
 
@@ -552,7 +541,7 @@ size_t FunctionZoneParser::getBodyClosePos(size_t begin, const TCHAR *bodyOpenSy
 			{
 				// Now we determinate the symbol (open or close)
 				int tmpStart = (*ppEditView)->searchInTarget(bodyOpenSymbol, lstrlen(bodyOpenSymbol), targetStart, targetEnd);
-				if (tmpStart != -1 && tmpStart != -2) // open symbol found 
+				if (tmpStart >= 0) // open symbol found 
 				{
 					++cntOpen;
 				}
@@ -587,7 +576,7 @@ void FunctionZoneParser::classParse(vector<foundInfo> & foundInfos, vector< pair
 
 	int targetEnd = 0;
 	
-	while (targetStart != -1 && targetStart != -2)
+	while (targetStart >= 0)
 	{
 		targetEnd = int((*ppEditView)->execute(SCI_GETTARGETEND));
 
@@ -596,7 +585,7 @@ void FunctionZoneParser::classParse(vector<foundInfo> & foundInfos, vector< pair
 		generic_string classStructName = parseSubLevel(targetStart, targetEnd, _classNameExprArray, foundPos, ppEditView);
 		
 
-		if (not _openSymbole.empty() && not _closeSymbole.empty())
+		if (!_openSymbole.empty() && !_closeSymbole.empty())
 		{
 			targetEnd = static_cast<int32_t>(getBodyClosePos(targetEnd, _openSymbole.c_str(), _closeSymbole.c_str(), commentZones, ppEditView));
 		}
@@ -633,7 +622,7 @@ void FunctionParser::getCommentZones(vector< pair<int, int> > & commentZone, siz
 	int targetStart = (*ppEditView)->searchInTarget(_commentExpr.c_str(), _commentExpr.length(), begin, end);
 	int targetEnd = 0;
 	
-	while (targetStart != -1 && targetStart != -2)
+	while (targetStart >= 0)
 	{
 		targetStart = int((*ppEditView)->execute(SCI_GETTARGETSTART));
 		targetEnd = int((*ppEditView)->execute(SCI_GETTARGETEND));

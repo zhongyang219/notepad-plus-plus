@@ -1,29 +1,18 @@
 // This file is part of Notepad++ project
-// Copyright (C)2020 Don HO <don.h@free.fr>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// Note that the GPL places important restrictions on "derived works", yet
-// it does not provide a detailed definition of that term.  To avoid      
-// misunderstandings, we consider an application to constitute a          
-// "derivative work" for the purpose of this license if it does any of the
-// following:                                                             
-// 1. Integrates source code from Notepad++.
-// 2. Integrates/includes/aggregates Notepad++ into a proprietary executable
-//    installer, such as those produced by InstallShield.
-// 3. Links to a library or executes a program that does any of the above.
+// Copyright (C)2021 Don HO <don.h@free.fr>
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 #include "Notepad_plus.h"
@@ -55,32 +44,34 @@ MenuPosition menuPos[] = {
 	{ 0, 13, -1, "file-closeMore" },
 	{ 0, 22, -1, "file-recentFiles" },
 
-	{ 1, 10, -1, "edit-copyToClipboard" },
-	{ 1, 11, -1, "edit-indent" },
-	{ 1, 12, -1, "edit-convertCaseTo" },
-	{ 1, 13, -1, "edit-lineOperations" },
-	{ 1, 14, -1, "edit-comment" },
-	{ 1, 15, -1, "edit-autoCompletion" },
-	{ 1, 16, -1, "edit-eolConversion" },
-	{ 1, 17, -1, "edit-blankOperations" },
-	{ 1, 18, -1, "edit-pasteSpecial" },
-	{ 1, 19, -1, "edit-onSelection" },
+	{ 1, 10, -1, "edit-insert" },
+	{ 1, 11, -1, "edit-copyToClipboard" },
+	{ 1, 12, -1, "edit-indent" },
+	{ 1, 13, -1, "edit-convertCaseTo" },
+	{ 1, 14, -1, "edit-lineOperations" },
+	{ 1, 15, -1, "edit-comment" },
+	{ 1, 16, -1, "edit-autoCompletion" },
+	{ 1, 17, -1, "edit-eolConversion" },
+	{ 1, 18, -1, "edit-blankOperations" },
+	{ 1, 19, -1, "edit-pasteSpecial" },
+	{ 1, 20, -1, "edit-onSelection" },
 
 	{ 2, 18, -1, "search-markAll" },
-	{ 2, 19, -1, "search-unmarkAll" },
-	{ 2, 20, -1, "search-jumpUp" },
-	{ 2, 21, -1, "search-jumpDown" },
-	{ 2, 22, -1, "search-copyStyledText" },
-	{ 2, 24, -1, "search-bookmark" },
+	{ 2, 19, -1, "search-markOne" },
+	{ 2, 20, -1, "search-unmarkAll" },
+	{ 2, 21, -1, "search-jumpUp" },
+	{ 2, 22, -1, "search-jumpDown" },
+	{ 2, 23, -1, "search-copyStyledText" },
+	{ 2, 25, -1, "search-bookmark" },
 
-	{ 3,  4, -1, "view-currentFileIn" },
-	{ 3,  6, -1, "view-showSymbol" },
-	{ 3,  7, -1, "view-zoom" },
-	{ 3,  8, -1, "view-moveCloneDocument" },
-	{ 3,  9, -1, "view-tab" },
-	{ 3, 18, -1, "view-collapseLevel" },
-	{ 3, 19, -1, "view-uncollapseLevel" },
-	{ 3, 23, -1, "view-project" },
+	{ 3,  5, -1, "view-currentFileIn" },
+	{ 3,  7, -1, "view-showSymbol" },
+	{ 3,  8, -1, "view-zoom" },
+	{ 3,  9, -1, "view-moveCloneDocument" },
+	{ 3, 10, -1, "view-tab" },
+	{ 3, 19, -1, "view-collapseLevel" },
+	{ 3, 20, -1, "view-uncollapseLevel" },
+	{ 3, 24, -1, "view-project" },
 
 	{ 4,  5, -1, "encoding-characterSets" },
 	{ 4,  5,  0, "encoding-arabic" },
@@ -249,22 +240,22 @@ generic_string NativeLangSpeaker::getShortcutNameString(int itemID) const
 
 generic_string NativeLangSpeaker::getLocalizedStrFromID(const char *strID, const generic_string& defaultString) const
 {
-	if (not _nativeLangA)
+	if (!_nativeLangA)
 		return defaultString;
 
-	if (not strID)
+	if (!strID)
 		return defaultString;
 
 	TiXmlNodeA *node = _nativeLangA->FirstChild("MiscStrings");
-	if (not node) return defaultString;
+	if (!node) return defaultString;
 
 	node = node->FirstChild(strID);
-	if (not node) return defaultString;
+	if (!node) return defaultString;
 
 	TiXmlElementA *element = node->ToElement();
 
 	const char *value = element->Attribute("value");
-	if (not value) return defaultString;
+	if (!value) return defaultString;
 
 	WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
 	return wmc.char2wchar(value, _nativeLangEncoding);
@@ -762,7 +753,8 @@ void NativeLangSpeaker::changeFindReplaceDlgLang(FindReplaceDlg & findReplaceDlg
 				const char *titre1 = (dlgNode->ToElement())->Attribute("titleFind");
 				const char *titre2 = (dlgNode->ToElement())->Attribute("titleReplace");
 				const char *titre3 = (dlgNode->ToElement())->Attribute("titleFindInFiles");
-				const char *titre4 = (dlgNode->ToElement())->Attribute("titleMark");
+				const char *titre4 = (dlgNode->ToElement())->Attribute("titleFindInProjects");
+				const char *titre5 = (dlgNode->ToElement())->Attribute("titleMark");
 
 				WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
 
@@ -787,6 +779,12 @@ void NativeLangSpeaker::changeFindReplaceDlgLang(FindReplaceDlg & findReplaceDlg
 				if (titre4 && titre4[0])
 				{
 					basic_string<wchar_t> nameW = wmc.char2wchar(titre4, _nativeLangEncoding);
+					nppParam.getFindDlgTabTitiles()._findInProjects = nameW;
+					findReplaceDlg.changeTabName(FINDINPROJECTS_DLG, nppParam.getFindDlgTabTitiles()._findInProjects.c_str());
+				}
+				if (titre5 && titre5[0])
+				{
+					basic_string<wchar_t> nameW = wmc.char2wchar(titre5, _nativeLangEncoding);
 					nppParam.getFindDlgTabTitiles()._mark = nameW;
 					findReplaceDlg.changeTabName(MARK_DLG, nppParam.getFindDlgTabTitiles()._mark.c_str());
 				}
@@ -876,6 +874,13 @@ void NativeLangSpeaker::changePrefereceDlgLang(PreferenceDlg & preference)
 	{
 		const wchar_t *nameW = wmc.char2wchar(titre, _nativeLangEncoding);
 		preference.renameDialogTitle(TEXT("Scintillas"), nameW);
+	}
+
+	changeDlgLang(preference._darkModeSubDlg.getHSelf(), "DarkMode", titre, titreMaxSize);
+	if (titre[0] != '\0')
+	{
+		const wchar_t* nameW = wmc.char2wchar(titre, _nativeLangEncoding);
+		preference.renameDialogTitle(TEXT("DarkMode"), nameW);
 	}
 
 	changeDlgLang(preference._marginsBorderEdgeSubDlg.getHSelf(), "MarginsBorderEdge", titre, titreMaxSize);
@@ -1196,18 +1201,16 @@ bool NativeLangSpeaker::changeDlgLang(HWND hDlg, const char *dlgTagName, char *t
 		int id;
 		element->Attribute("id", &id);
 		HWND hCombo = ::GetDlgItem(hDlg, id);
+		if (!hCombo) return false;
 
-		if (hCombo)
+		for (TiXmlNodeA *gChildNode = childNode->FirstChildElement("Element");
+			gChildNode;
+			gChildNode = gChildNode->NextSibling("Element"))
 		{
-			for (TiXmlNodeA *gChildNode = childNode->FirstChildElement("Element");
-				gChildNode;
-				gChildNode = gChildNode->NextSibling("Element"))
-			{
-				TiXmlElementA *comBoelement = gChildNode->ToElement();
-				const char *name = comBoelement->Attribute("name");
-				const wchar_t *nameW = wmc.char2wchar(name, _nativeLangEncoding);
-				comboElms.push_back(nameW);
-			}
+			TiXmlElementA *comBoelement = gChildNode->ToElement();
+			const char *name = comBoelement->Attribute("name");
+			const wchar_t *nameW = wmc.char2wchar(name, _nativeLangEncoding);
+			comboElms.push_back(nameW);
 		}
 
 		size_t count = ::SendMessage(hCombo, CB_GETCOUNT, 0, 0);

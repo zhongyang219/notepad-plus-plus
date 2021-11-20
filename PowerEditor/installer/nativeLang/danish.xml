@@ -298,7 +298,6 @@
                     <Item id="47002" name="Notepad++ projektside"/>
                     <Item id="47003" name="Onlinedokumentation"/>
                     <Item id="47004" name="Notepad++ community (forum)"/>
-                    <Item id="47011" name="Livesupport"/>
                     <Item id="47012" name="Fejlfindingsinfo..."/>
                     <Item id="47005" name="Hent flere plugins"/>
                     <Item id="47006" name="Opdater Notepad++"/>
@@ -845,7 +844,6 @@ Du kan definere adskillige kolonnemarkører ved at bruge blanktegn til at adskil
                     <Item id="6413" name="Standardmappe (åbn/gem)"/>
                     <Item id="6414" name="Følg nuværende dokument"/>
                     <Item id="6415" name="Husk sidste anvendte mappe"/>
-                    <Item id="6430" name="Brug gem-dialog med nyt udseende (uden stikapacitet i Unix-stil)"/>
                     <Item id="6431" name="Åbn alle mappens filer ved slip af mappe, fremfor at starte mappe som arbejdsområde"/>
                 </DefaultDir>
 
@@ -1177,11 +1175,11 @@ Fortsæt?"/>
         <ClipboardHistory>
             <PanelTitle name="Historik for udklipsholder"/>
         </ClipboardHistory>
-        <DocSwitcher>
+        <DocList>
             <PanelTitle name="Dokumentskifter"/>
             <ColumnName name="Navn"/>
             <ColumnExt name="Filtype"/>
-        </DocSwitcher>
+        </DocList>
         <WindowsDlg>
             <ColumnName name="Navn"/>
             <ColumnPath name="Sti"/>

@@ -1,29 +1,18 @@
 // This file is part of Notepad++ project
-// Copyright (C)2020 Don HO <don.h@free.fr>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// Note that the GPL places important restrictions on "derived works", yet
-// it does not provide a detailed definition of that term.  To avoid      
-// misunderstandings, we consider an application to constitute a          
-// "derivative work" for the purpose of this license if it does any of the
-// following:                                                             
-// 1. Integrates source code from Notepad++.
-// 2. Integrates/includes/aggregates Notepad++ into a proprietary executable
-//    installer, such as those produced by InstallShield.
-// 3. Links to a library or executes a program that does any of the above.
+// Copyright (C)2021 Don HO <don.h@free.fr>
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 #pragma once
@@ -175,6 +164,10 @@
     #define    IDM_EDIT_SORTLINES_LEXICO_CASE_INSENS_ASCENDING  (IDM_EDIT + 80)
     #define    IDM_EDIT_SORTLINES_LEXICO_CASE_INSENS_DESCENDING (IDM_EDIT + 81)
     #define    IDM_EDIT_COPY_LINK                               (IDM_EDIT + 82)
+    #define    IDM_EDIT_SORTLINES_REVERSE_ORDER                 (IDM_EDIT + 83)
+    #define    IDM_EDIT_INSERT_DATETIME_SHORT                   (IDM_EDIT + 84)
+    #define    IDM_EDIT_INSERT_DATETIME_LONG                    (IDM_EDIT + 85)
+    #define    IDM_EDIT_INSERT_DATETIME_CUSTOMIZED              (IDM_EDIT + 86)
 
     #define    IDM_EDIT_AUTOCOMPLETE                            (50000 + 0)
     #define    IDM_EDIT_AUTOCOMPLETE_CURRENTFILE                (50000 + 1)
@@ -247,9 +240,15 @@
     #define    IDM_SEARCH_ALLSTYLESTOCLIP      (IDM_SEARCH + 60)
     #define    IDM_SEARCH_MARKEDTOCLIP         (IDM_SEARCH + 61)
 
+    #define    IDM_SEARCH_MARKONEEXT1          (IDM_SEARCH + 62)
+    #define    IDM_SEARCH_MARKONEEXT2          (IDM_SEARCH + 63)
+    #define    IDM_SEARCH_MARKONEEXT3          (IDM_SEARCH + 64)
+    #define    IDM_SEARCH_MARKONEEXT4          (IDM_SEARCH + 65)
+    #define    IDM_SEARCH_MARKONEEXT5          (IDM_SEARCH + 66)
+
 #define    IDM_MISC    (IDM + 3500)
-    #define    IDM_FILESWITCHER_FILESCLOSE            (IDM_MISC + 1)
-    #define    IDM_FILESWITCHER_FILESCLOSEOTHERS      (IDM_MISC + 2)
+    #define    IDM_DOCLIST_FILESCLOSE             (IDM_MISC + 1)
+    #define    IDM_DOCLIST_FILESCLOSEOTHERS       (IDM_MISC + 2)
 
 
 #define IDM_VIEW    (IDM + 4000)                
@@ -263,7 +262,7 @@
     #define    IDM_VIEW_DRAWTABBAR_INACIVETAB     (IDM_VIEW + 8) 
     #define    IDM_VIEW_POSTIT                    (IDM_VIEW + 9)
     #define    IDM_VIEW_TOGGLE_FOLDALL            (IDM_VIEW + 10)
-    //#define    IDM_VIEW_USER_DLG                  (IDM_VIEW + 11)
+    #define    IDM_VIEW_DISTRACTIONFREE           (IDM_VIEW + 11)
     #define    IDM_VIEW_LINENUMBER                (IDM_VIEW + 12)
     #define    IDM_VIEW_SYMBOLMARGIN              (IDM_VIEW + 13)
     #define    IDM_VIEW_FOLDERMAGIN               (IDM_VIEW + 14)
@@ -279,8 +278,8 @@
     #define    IDM_VIEW_ZOOMOUT                   (IDM_VIEW + 24)
     #define    IDM_VIEW_TAB_SPACE                 (IDM_VIEW + 25)
     #define    IDM_VIEW_EOL                       (IDM_VIEW + 26)
-    //#define    IDM_VIEW_EDGELINE                  (IDM_VIEW + 27)
-    //#define    IDM_VIEW_EDGEBACKGROUND            (IDM_VIEW + 28)
+    #define    IDM_VIEW_TOOLBAR_REDUCE_SET2       (IDM_VIEW + 27)
+    #define    IDM_VIEW_TOOLBAR_ENLARGE_SET2      (IDM_VIEW + 28)
     #define    IDM_VIEW_TOGGLE_UNFOLDALL          (IDM_VIEW + 29)
     #define    IDM_VIEW_FOLD_CURRENT              (IDM_VIEW + 30)
     #define    IDM_VIEW_UNFOLD_CURRENT            (IDM_VIEW + 31)
@@ -323,7 +322,7 @@
         #define    IDM_VIEW_UNFOLD_7    (IDM_VIEW_UNFOLD + 7)
         #define    IDM_VIEW_UNFOLD_8    (IDM_VIEW_UNFOLD + 8)
     
-    #define    IDM_VIEW_FILESWITCHER_PANEL        (IDM_VIEW + 70)
+    #define    IDM_VIEW_DOCLIST                   (IDM_VIEW + 70)
     #define    IDM_VIEW_SWITCHTO_OTHER_VIEW       (IDM_VIEW + 72)
     #define    IDM_EXPORT_FUNC_LIST_AND_QUIT      (IDM_VIEW + 73)
 
@@ -360,6 +359,7 @@
     #define    IDM_VIEW_SWITCHTO_PROJECT_PANEL_3  (IDM_VIEW + 106)
     #define    IDM_VIEW_SWITCHTO_FILEBROWSER      (IDM_VIEW + 107)
     #define    IDM_VIEW_SWITCHTO_FUNC_LIST        (IDM_VIEW + 108)
+    #define    IDM_VIEW_SWITCHTO_DOCLIST          (IDM_VIEW + 109)
 
     #define    IDM_VIEW_GOTO_ANOTHER_VIEW        10001
     #define    IDM_VIEW_CLONE_TO_ANOTHER_VIEW    10002
@@ -373,14 +373,14 @@
     #define    IDM_FORMAT_TOMAC             (IDM_FORMAT + 3)
     #define    IDM_FORMAT_ANSI              (IDM_FORMAT + 4)
     #define    IDM_FORMAT_UTF_8             (IDM_FORMAT + 5)
-    #define    IDM_FORMAT_UCS_2BE           (IDM_FORMAT + 6)
-    #define    IDM_FORMAT_UCS_2LE           (IDM_FORMAT + 7)
+    #define    IDM_FORMAT_UTF_16BE          (IDM_FORMAT + 6)
+    #define    IDM_FORMAT_UTF_16LE          (IDM_FORMAT + 7)
     #define    IDM_FORMAT_AS_UTF_8          (IDM_FORMAT + 8)
     #define    IDM_FORMAT_CONV2_ANSI        (IDM_FORMAT + 9)
     #define    IDM_FORMAT_CONV2_AS_UTF_8    (IDM_FORMAT + 10)
     #define    IDM_FORMAT_CONV2_UTF_8       (IDM_FORMAT + 11)
-    #define    IDM_FORMAT_CONV2_UCS_2BE     (IDM_FORMAT + 12)
-    #define    IDM_FORMAT_CONV2_UCS_2LE     (IDM_FORMAT + 13)
+    #define    IDM_FORMAT_CONV2_UTF_16BE    (IDM_FORMAT + 12)
+    #define    IDM_FORMAT_CONV2_UTF_16LE    (IDM_FORMAT + 13)
 
     #define    IDM_FORMAT_ENCODE            (IDM_FORMAT + 20)
     #define    IDM_FORMAT_WIN_1250          (IDM_FORMAT_ENCODE + 0)
@@ -511,7 +511,7 @@
     #define    IDM_LANG_FORTH              (IDM_LANG + 72)
     #define    IDM_LANG_LATEX              (IDM_LANG + 73)
     #define    IDM_LANG_MMIXAL             (IDM_LANG + 74)
-    #define    IDM_LANG_NIMROD             (IDM_LANG + 75)
+    #define    IDM_LANG_NIM                (IDM_LANG + 75)
     #define    IDM_LANG_NNCRONTAB          (IDM_LANG + 76)
     #define    IDM_LANG_OSCRIPT            (IDM_LANG + 77)
     #define    IDM_LANG_REBOL              (IDM_LANG + 78)
@@ -520,6 +520,7 @@
     #define    IDM_LANG_SPICE              (IDM_LANG + 81)
     #define    IDM_LANG_TXT2TAGS           (IDM_LANG + 82)
     #define    IDM_LANG_VISUALPROLOG       (IDM_LANG + 83)
+    #define    IDM_LANG_TYPESCRIPT         (IDM_LANG + 84)
 
     #define    IDM_LANG_EXTERNAL           (IDM_LANG + 165)
     #define    IDM_LANG_EXTERNAL_LIMIT     (IDM_LANG + 179)
@@ -542,7 +543,7 @@
     //#define    IDM_HELP             (IDM_ABOUT  + 8)
     #define    IDM_CONFUPDATERPROXY (IDM_ABOUT  + 9)
     #define    IDM_CMDLINEARGUMENTS (IDM_ABOUT  + 10)
-    #define    IDM_ONLINESUPPORT    (IDM_ABOUT  + 11)
+    //#define    IDM_ONLINESUPPORT    (IDM_ABOUT  + 11)
     #define    IDM_DEBUGINFO        (IDM_ABOUT  + 12)
 
 

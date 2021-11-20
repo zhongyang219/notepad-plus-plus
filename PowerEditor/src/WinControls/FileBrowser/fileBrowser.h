@@ -1,29 +1,18 @@
 // This file is part of Notepad++ project
-// Copyright (C)2020 Don HO <don.h@free.fr>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// Note that the GPL places important restrictions on "derived works", yet
-// it does not provide a detailed definition of that term.  To avoid      
-// misunderstandings, we consider an application to constitute a          
-// "derivative work" for the purpose of this license if it does any of the
-// following:                                                             
-// 1. Integrates source code from Notepad++.
-// 2. Integrates/includes/aggregates Notepad++ into a proprietary executable
-//    installer, such as those produced by InstallShield.
-// 3. Links to a library or executes a program that does any of the above.
+// Copyright (C)2021 Don HO <don.h@free.fr>
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 #pragma once
@@ -90,7 +79,7 @@ public:
 private:
 	std::vector<FolderInfo> _subFolders;
 	std::vector<FileInfo> _files;
-	FolderInfo *_parent = nullptr;
+	FolderInfo* _parent = nullptr;
 	generic_string _name;
 	generic_string _rootPath; // set only for root folder; empty for normal folder
 };
@@ -110,10 +99,12 @@ public:
 
 private:
 	FolderInfo _rootFolder;
-	FileBrowser *_pFileBrowser = nullptr;
+	FileBrowser* _pFileBrowser = nullptr;
 	HANDLE _watchThreadHandle = nullptr;
 	HANDLE _EventHandle = nullptr;
 	static DWORD WINAPI watching(void *param);
+
+	static void processChange(DWORD dwAction, std::vector<generic_string> filesToChange, FolderUpdater* thisFolderUpdater);
 };
 
 struct SortingData4lParam {
@@ -151,14 +142,13 @@ public:
 
 	generic_string getNodePath(HTREEITEM node) const;
 	generic_string getNodeName(HTREEITEM node) const;
-	void addRootFolder(generic_string);
+	void addRootFolder(generic_string rootFolderPath);
 
 	HTREEITEM getRootFromFullPath(const generic_string & rootPath) const;
-	HTREEITEM findChildNodeFromName(HTREEITEM parent, const generic_string&) const;
+	HTREEITEM findChildNodeFromName(HTREEITEM parent, const generic_string& label) const;
 
-	bool addInTree(const generic_string& rootPath, const generic_string& addItemFullPath, HTREEITEM node, std::vector<generic_string> linarPathArray);
 	HTREEITEM findInTree(const generic_string& rootPath, HTREEITEM node, std::vector<generic_string> linarPathArray) const;
-	bool deleteFromTree(const generic_string& rootPath, HTREEITEM node, const std::vector<generic_string>& linarPathArray);
+
 	void deleteAllFromTree() {
 		popupMenuCmd(IDM_FILEBROWSER_REMOVEALLROOTS);
 	};
@@ -192,12 +182,30 @@ protected:
 
 	void initPopupMenus();
 	void destroyMenus();
-	BOOL setImageList(int root_open_id, int root_close_id, int open_node_id, int closed_node_id, int leaf_id);
 
 	BrowserNodeType getNodeType(HTREEITEM hItem);
 	void popupMenuCmd(int cmdID);
 
 	bool selectCurrentEditingFile() const;
+
+	struct FilesToChange {
+		generic_string _commonPath; // Common path between all the files. _rootPath + _linarWithoutLastPathElement
+		generic_string _rootPath;
+		std::vector<generic_string> _linarWithoutLastPathElement;
+		std::vector<generic_string> _files; // file/folder names
+	};
+
+	std::vector<FilesToChange> getFilesFromParam(LPARAM lParam) const;
+
+	bool addToTree(FilesToChange & group, HTREEITEM node);
+
+	bool deleteFromTree(FilesToChange & group);
+
+	std::vector<HTREEITEM> findInTree(FilesToChange & group, HTREEITEM node) const;
+
+	std::vector<HTREEITEM> findChildNodesFromNames(HTREEITEM parent, std::vector<generic_string> & labels) const;
+
+	void removeNamesAlreadyInNode(HTREEITEM parent, std::vector<generic_string> & labels) const;
 
 	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	void notified(LPNMHDR notification);

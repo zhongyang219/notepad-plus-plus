@@ -1,56 +1,59 @@
-Notepad++ v7.9.2 Enhancements & bug-fixes:
+Notepad++ v8.1.9.1 bug-fixes and new enhancement:
 
-1.  Fix regression of auto-Indent.
-2.  Add custom URI schemes ability.
-3.  Improve URL parser: fix apostrophe in an URL issue.
-4.  Add context menu with "Copy link" ability.
-5.  Add color samples on menu items for styling features.
-6.  Add "-settingsDir" argument for overriding default settings path.
-7.  Fix crash while exit command issued by plugin.
-8.  Fix several bugs of PHP parser rule for function list.
-9.  Move "Normal Text" to top in Languages Menu.
-10. Add new API NPPM_GETSETTINGSONCLOUDPATH for plugins.
-11. Add an option for displaying constant line number width.
-12. Fix function list is empty with new user profile in the same PC issue.
-13. Fix single-quoted string being badly recognized as attribute value in XML.
-14. Fix docked panels appear with "-nosession" cmd line parameters.
-15. Improve text selection after Replace All In Selection operation.
-16. Add the number of total documents on windows dialog's title bar.
-17. Fix scroll to last line problem after main window resizing.
-18. Fix Plugin admin display UTF-8 issue in its description.
-19. Fix Search result's text direction (RTL) not always synchronized with main edit zone's one issue.
-20. Fix dockable panels display issue in RTL direction.
-21. Fix Search result line number highlighting inaccurate issue.
-22. Make "Line" preceding each line number on Search Results translatable.
-23. Fix menu check marks not being removed after closing "Clipboard History" and "Character Panel" panels.
-24. Fix command line arguments -p, -n & -c negative value's undefined behaviour.
-25. Add new Margin/Border/Edge sub-page in Preferences.
-26. Fix find in files failure issue due to directory path with leading/trailing spaces.
-27. Fix folder icon display issue in "Folder as Workspace" after "Expand/Collapse All".
-28. Make "Clipboard History" and "Character Panel" togglable.
-29. Fix Find in found results dialog launch failure after macro execution.
-30. Disallow Goto dlg offset option from moving to position inside multi-byte char or between CR and LF.
-31. Fix "Go to..." dialog wrong Offset value in empty files.
-32. Prevent corruption possibility when using -p command line parameter in a UTF file.
-33. Improve indent guidelines on non-brace control block languages.
-34. Prevent names of untitled tabs from duplication.
-35. Add tooltips for Folder as Workspace 3 commands.
-36. Fix "SCI_NEWLINE" inside a macro not working issue.
-37. Fix bug where search-results won't open 'new 1' file.
-38. Fix tab close button remain pushed issue.
-39. Enhance ghost typing command line argument feature - using white space directly instead of %20.
+1.  Fix a regression of saving problem.
+2.  Fix a regression of reloading false alarm from the network drive.
+3.  Make Function list/Project panel/Folder as Workspace icon display correct under high DPI.
+4.  Make UDL generic dark mode (working for all dark theme) possible via UDL UI.
+5.  Fix phantom docked panels issue after restoring from systray.
+6.  Enable backup on save (simple) feature by default (only for the new installation).
+
+
+Notepad++ v8.1.9 bug-fixes:
+
+1.  Fix empty file with non-Unicode encoding cannot be saved issue.
+2.  Fix language list in Style Configurator not being reloaded issue.
+
+
+Notepad++ v8.1.8 bug-fixes:
+
+1.  Fix config files (XML) saving performance regression.
+2.  Workaround Microsoft dark mode API bug of Windows 11.
+
+
+Notepad++ v8.1.7 bug-fixes:
+
+1.  Fix empty file not being saved regression.
+2.  Fix white flash in dark mode on CMD launch with position parameters.
+3.  Enhance dark themes for some programming languages (JSON, Python & Makefile).
+4.  Fix "Run macro until the end of file" command skipping the last line issue.
+5.  Fix tooltip layout and position in RTL mode.
+6.  Fix docking problem for dockable panel in RTL mode.
+
+
+Notepad++ v8.1.6 bug-fixes:
+
+1.  Fix NUL file-corruption issue after system shutting down brutally (power cuts).
+2.  Fix session lost issue after MS update restarting Windows.
+3.  Make Markdown UDL work in every dark theme.
+4.  Fix file can be marked as saved even it's been deleted outside. 
+5.  Fix white flash on Notepad++ startup in dark mode issue.
+6.  Fix status bar text display glitchy in dark mode.
+7.  Fix docked window sizing problem in RTL mode.
+8.  Fix floating panel movement problem in RTL mode.
+9.  Fix Print GUI bug in Preferences dialog.
+
 
 More fixes & implementations detail:
-https://notepad-plus-plus.org/downloads/v7.9.2/
+https://notepad-plus-plus.org/downloads/v8.1.9.1/
 
 
 Included plugins:
 
-1.  NppExport v0.2.9
-2.  Converter 4.2.1
-3.  Mime Tool 2.5
+1.  NppExport v0.3
+2.  Converter v4.3
+3.  Mime Tool v2.6
 
 
 Updater (Installer only):
 
-* WinGup (for Notepad++) v5.1.1
+* WinGup (for Notepad++) v5.2.2

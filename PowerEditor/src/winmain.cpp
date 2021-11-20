@@ -1,35 +1,26 @@
 // This file is part of Notepad++ project
-// Copyright (C)2020 Don HO <don.h@free.fr>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// Note that the GPL places important restrictions on "derived works", yet
-// it does not provide a detailed definition of that term.  To avoid
-// misunderstandings, we consider an application to constitute a
-// "derivative work" for the purpose of this license if it does any of the
-// following:
-// 1. Integrates source code from Notepad++.
-// 2. Integrates/includes/aggregates Notepad++ into a proprietary executable
-//    installer, such as those produced by InstallShield.
-// 3. Links to a library or executes a program that does any of the above.
+// Copyright (C)2021 Don HO <don.h@free.fr>
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Notepad_plus_Window.h"
 #include "Processus.h"
 #include "Win32Exception.h"	//Win32 exception
 #include "MiniDumper.h"			//Write dump files
 #include "verifySignedfile.h"
+#include "NppDarkMode.h"
+#include <memory>
 
 typedef std::vector<generic_string> ParamVector;
 
@@ -319,6 +310,8 @@ const TCHAR FLAG_PRINTANDQUIT[] = TEXT("-quickPrint");
 const TCHAR FLAG_NOTEPAD_COMPATIBILITY[] = TEXT("-notepadStyleCmdline");
 const TCHAR FLAG_OPEN_FOLDERS_AS_WORKSPACE[] = TEXT("-openFoldersAsWorkspace");
 const TCHAR FLAG_SETTINGS_DIR[] = TEXT("-settingsDir=");
+const TCHAR FLAG_TITLEBAR_ADD[] = TEXT("-titleAdd=");
+const TCHAR FLAG_APPLY_UDL[] = TEXT("-udl=");
 
 void doException(Notepad_plus_Window & notepad_plus_plus)
 {
@@ -414,6 +407,7 @@ PWSTR stripIgnoredParams(ParamVector & params, PWSTR pCmdLine)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 {
+	generic_string cmdLineString = pCmdLine ? pCmdLine : _T("");
 	ParamVector params;
 	parseCommandLine(pCmdLine, params);
 	PWSTR pCmdLineWithoutIgnores = stripIgnoredParams(params, pCmdLine);
@@ -464,6 +458,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 
 	NppParameters& nppParameters = NppParameters::getInstance();
 
+	nppParameters.setCmdLineString(cmdLineString);
+
 	generic_string path;
 	if (getParamValFromString(FLAG_SETTINGS_DIR, params, path))
 	{
@@ -475,10 +471,34 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 		nppParameters.setCmdSettingsDir(path);
 	}
 
+	generic_string titleBarAdditional;
+	if (getParamValFromString(FLAG_TITLEBAR_ADD, params, titleBarAdditional))
+	{
+		if (titleBarAdditional.length() >= 2)
+		{
+			if (titleBarAdditional.front() == '"' && titleBarAdditional.back() == '"')
+			{
+				titleBarAdditional = titleBarAdditional.substr(1, titleBarAdditional.length() - 2);
+			}
+		}
+		nppParameters.setTitleBarAdd(titleBarAdditional);
+	}
+
+	generic_string udlName;
+	if (getParamValFromString(FLAG_APPLY_UDL, params, udlName))
+	{
+		if (udlName.length() >= 2)
+		{
+			if (udlName.front() == '"' && udlName.back() == '"')
+			{
+				udlName = udlName.substr(1, udlName.length() - 2);
+			}
+		}
+		cmdLineParams._udlName = udlName;
+	}
+
 	if (showHelp)
 		::MessageBox(NULL, COMMAND_ARG_HELP, TEXT("Notepad++ Command Argument Help"), MB_OK);
-
-
 
 	if (cmdLineParams._localizationPath != TEXT(""))
 	{
@@ -487,7 +507,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 	}
 
 	nppParameters.load();
-	NppGUI & nppGui = const_cast<NppGUI &>(nppParameters.getNppGUI());
+
+	NppGUI & nppGui = nppParameters.getNppGUI();
+
+	NppDarkMode::initDarkMode();
 
 	bool doUpdateNpp = nppGui._autoUpdateOpt._doAutoUpdate;
 	bool doUpdatePluginList = nppGui._autoUpdateOpt._doAutoUpdate;
@@ -587,7 +610,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
         }
 	}
 
-	Notepad_plus_Window notepad_plus_plus;
+	auto upNotepadWindow = std::make_unique<Notepad_plus_Window>();
+	Notepad_plus_Window & notepad_plus_plus = *upNotepadWindow.get();
 
 	generic_string updaterDir = nppParameters.getNppPath();
 	updaterDir += TEXT("\\updater\\");
@@ -621,9 +645,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 
 	if (TheFirstOne && isUpExist && isGtXP && isSignatureOK)
 	{
-		if (nppParameters.isx64())
+		if (nppParameters.archType() == IMAGE_FILE_MACHINE_AMD64)
 		{
 			updaterParams += TEXT(" -px64");
+		}
+		else if (nppParameters.archType() == IMAGE_FILE_MACHINE_ARM64)
+		{
+			updaterParams += TEXT(" -parm64");
 		}
 
 		if (doUpdateNpp)
@@ -646,9 +674,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 			generic_string upPlParams = TEXT("-v"); 
 			upPlParams += notepad_plus_plus.getPluginListVerStr();
 
-			if (nppParameters.isx64())
+			if (nppParameters.archType() == IMAGE_FILE_MACHINE_AMD64)
 			{
 				upPlParams += TEXT(" -px64");
+			}
+			else if (nppParameters.archType() == IMAGE_FILE_MACHINE_ARM64)
+			{
+				upPlParams += TEXT(" -parm64");
 			}
 
 			upPlParams += TEXT(" -upZip");
