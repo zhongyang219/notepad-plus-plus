@@ -149,3 +149,7 @@ PowerEditor/src/MISC/md5/RCa06792
 *.db
 *.sln
 *.opendb
+/PowerEditor/bin/Unicode Debug_Win32
+/PowerEditor/bin/Unicode Debug_x64
+/PowerEditor/bin/Unicode Release_Win32
+/PowerEditor/bin/Unicode Release_x64
