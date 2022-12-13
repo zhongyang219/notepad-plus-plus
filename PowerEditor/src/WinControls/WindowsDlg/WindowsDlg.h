@@ -55,11 +55,21 @@ public :
 	WindowsDlg();
 	int doDialog();
 	virtual void init(HINSTANCE hInst, HWND parent, DocTabView *pTab);
-
+	void doSortToTabs();
+	void doSort();
+	void sort(int columnID, bool reverseSort);
+	void sortFileNameASC();
+	void sortFileNameDSC();
+	void sortFilePathASC();
+	void sortFilePathDSC();
+	void sortFileTypeASC();
+	void sortFileTypeDSC();
+	void sortFileSizeASC();
+	void sortFileSizeDSC();
 	void doRefresh(bool invalidate = false);
 
 protected :
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 	virtual BOOL onInitDialog();
 	virtual void onSize(UINT nType, int cx, int cy);
 	virtual void onGetMinMaxInfo(MINMAXINFO* lpMMI);
@@ -70,22 +80,19 @@ protected :
 	void resetSelection();
 	void doSave();
 	void doClose();
-	void doSortToTabs();
 	void updateButtonState();
 	void activateCurrent();
 	void doColumnSort();
 	void doCount();
+	void refreshMap();
 	void putItemsToClipboard(bool isFullPath);
 	Buffer* getBuffer(int index) const;
 
-	static LONG_PTR originalListViewProc;
-	static LRESULT CALLBACK listViewProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
-
 	HWND _hList = nullptr;
 	static RECT _lastKnownLocation;
-	SIZE _szMinButton = { 0 };
-	SIZE _szMinListCtrl = { 0 };
-	DocTabView *_pTab = nullptr;
+	SIZE _szMinButton = {};
+	SIZE _szMinListCtrl = {};
+	DocTabView* _pTab = nullptr;
 	std::vector<int> _idxMap;
 	int _currentColumn = -1;
 	int _lastSort = -1;
@@ -99,11 +106,13 @@ private:
 class WindowsMenu
 {
 public:
-	WindowsMenu();
-	~WindowsMenu();
-	void init(HINSTANCE hInst, HMENU hMainMenu, const TCHAR *translation); 
+	WindowsMenu() {};
+	~WindowsMenu() {};
+	void init(HMENU hMainMenu); 
 	void initPopupMenu(HMENU hMenu, DocTabView *pTab);
 
 private:
 	HMENU _hMenu = nullptr;
+	HMENU _hMenuList = nullptr;
+	UINT _limitPrev = 0;
 };

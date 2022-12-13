@@ -101,10 +101,11 @@ void ContextMenu::create(HWND hParent, const std::vector<MenuItemUnit> & menuIte
 		{
 			lastIsSep = true;
 		}
+
 		if (mainMenuHandle)
 		{
 			UINT s = ::GetMenuState(mainMenuHandle, item._cmdID, MF_BYCOMMAND);
-			if (s != -1)
+			if (s != ((UINT)-1))
 			{
 				bool isEnabled = (s & (MF_DISABLED | MF_GRAYED)) == 0;
 				bool isChecked = (s & (MF_CHECKED)) != 0;

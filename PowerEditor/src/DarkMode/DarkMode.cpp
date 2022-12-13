@@ -1,11 +1,11 @@
-#include <Windows.h>
+#include <windows.h>
 
 #include "DarkMode.h"
 
 #include "IatHook.h"
 
-#include <Uxtheme.h>
-#include <Vssym32.h>
+#include <uxtheme.h>
+#include <vssym32.h>
 
 #include <unordered_set>
 #include <mutex>
@@ -134,7 +134,7 @@ bool IsHighContrast()
 void SetTitleBarThemeColor(HWND hWnd, BOOL dark)
 {
 	if (g_buildNumber < 18362)
-		SetPropW(hWnd, L"UseImmersiveDarkModeColors", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(dark)));
+		SetPropW(hWnd, L"UseImmersiveDarkModeColors", reinterpret_cast<HANDLE>(static_cast<intptr_t>(dark)));
 	else if (_SetWindowCompositionAttribute)
 	{
 		WINDOWCOMPOSITIONATTRIBDATA data = { WCA_USEDARKMODECOLORS, &dark, sizeof(dark) };
@@ -255,7 +255,14 @@ constexpr bool CheckBuildNumber(DWORD buildNumber)
 		buildNumber == 19041 || // 2004
 		buildNumber == 19042 || // 20H2
 		buildNumber == 19043 || // 21H1
-		buildNumber >= 22000);  // Windows 11 insider builds
+		buildNumber == 19044 || // 21H2
+		(buildNumber > 19044 && buildNumber < 22000) || // Windows 10 any version > 21H2 
+		buildNumber >= 22000);  // Windows 11 builds
+}
+
+bool IsWindows10() // or later OS version
+{
+	return (g_buildNumber >= 17763);
 }
 
 bool IsWindows11() // or later OS version

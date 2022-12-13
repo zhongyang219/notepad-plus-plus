@@ -37,8 +37,8 @@ private:
 	ScintillaEditView * _pEditView = nullptr;	//Scintilla to display calltip in
 	TiXmlElement * _pXmlKeyword = nullptr;	//current keyword node (first one)
 
-	int _curPos = 0;					//cursor position
-	int _startPos = 0;					//display start position
+	intptr_t _curPos = 0;					//cursor position
+	intptr_t _startPos = 0;					//display start position
 
 	TiXmlElement * _curFunction = nullptr;	//current function element
 	//cache some XML values n stuff
@@ -48,7 +48,7 @@ private:
 	stringVec _descriptions;		//vecotr of function descriptions
 	size_t _currentNbOverloads = 0;		//current amount of overloads
 	size_t _currentOverload = 0;			//current chosen overload
-	int _currentParam = 0;				//current highlighted param
+	size_t _currentParam = 0;				//current highlighted param
 
 	TCHAR _start = '(';
 	TCHAR _stop = ')';

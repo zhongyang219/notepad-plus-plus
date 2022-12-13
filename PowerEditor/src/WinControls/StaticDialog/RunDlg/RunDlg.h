@@ -32,6 +32,7 @@ const TCHAR nppDir[] = TEXT("NPP_DIRECTORY");
 const TCHAR nppFullFilePath[] = TEXT("NPP_FULL_FILE_PATH");
 const TCHAR currentLine[] = TEXT("CURRENT_LINE");
 const TCHAR currentColumn[] = TEXT("CURRENT_COLUMN");
+const TCHAR currentLineStr[] = TEXT("CURRENT_LINESTR");
 
 int whichVar(TCHAR *str);
 void expandNppEnvironmentStrs(const TCHAR *strSrc, TCHAR *stringDest, size_t strDestLen, HWND hWnd);
@@ -59,7 +60,7 @@ public :
     virtual void destroy() {};
 
 protected :
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 private :
 	void addTextToCombo(const TCHAR *txt2Add) const;

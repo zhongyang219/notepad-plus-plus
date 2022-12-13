@@ -25,7 +25,7 @@ void AnsiCharPanel::switchEncoding()
 	_listView.resetValues(codepage);
 }
 
-INT_PTR CALLBACK AnsiCharPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK AnsiCharPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -50,12 +50,15 @@ INT_PTR CALLBACK AnsiCharPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM 
 			_listView.setValues(codepage==-1?0:codepage);
 			_listView.display();
 
+			NppDarkMode::autoSubclassAndThemeChildControls(_hSelf);
+			NppDarkMode::autoSubclassAndThemeWindowNotify(_hSelf);
+
 			return TRUE;
 		}
 
 		case NPPM_INTERNAL_REFRESHDARKMODE:
 		{
-			NppDarkMode::setDarkListView(_listView.getHSelf());
+			NppDarkMode::autoThemeChildControls(_hSelf);
 			return TRUE;
 		}
 

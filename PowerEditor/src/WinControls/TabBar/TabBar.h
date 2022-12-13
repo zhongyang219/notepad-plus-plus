@@ -208,6 +208,8 @@ public :
 
 	static void setColour(COLORREF colour2Set, tabColourIndex i);
 
+	virtual int getIndividualTabColour(int tabIndex) = 0;
+
 protected:
     // it's the boss to decide if we do the drag N drop
     static bool _doDragNDrop;
@@ -219,7 +221,7 @@ protected:
     int _nSrcTab = -1;
 	int _nTabDragged = -1;
 	int _previousTabSwapped = -1;
-	POINT _draggingPoint; // coordinate of Screen
+	POINT _draggingPoint = {}; // coordinate of Screen
 	WNDPROC _tabBarDefaultProc = nullptr;
 
 	RECT _currentHoverTabRect;

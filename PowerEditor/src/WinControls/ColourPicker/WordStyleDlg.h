@@ -18,6 +18,7 @@
 #pragma once
 
 #include "ColourPicker.h"
+#include "URLCtrl.h"
 #include "WordStyleDlgRes.h"
 #include "Parameters.h"
 
@@ -109,6 +110,9 @@ public :
 
 	bool selectThemeByName(const TCHAR* themeName);
 
+	bool goToSection(const TCHAR* sectionNames); // sectionNames is formed as following: "Language name:Style name"
+	                                             // ex: "Global Styles:EOL custom color" will set Language on "Global Styles", then set Style on "EOL custom color" if both are found.
+
 private :
     ColourPicker *_pFgColour = nullptr;
     ColourPicker *_pBgColour = nullptr;
@@ -129,6 +133,8 @@ private :
 	HWND _hFontSizeStaticText = nullptr;
 	HWND _hStyleInfoStaticText = nullptr;
 
+	URLCtrl _goToSettings;
+
 	LexerStylerArray _lsArray;
     StyleArray _globalStyles;
 	generic_string _themeName;
@@ -144,7 +150,8 @@ private :
 	bool _isThemeDirty = false;
 	bool _isShownGOCtrls = false;
 
-	INT_PTR CALLBACK run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam);
+
+	intptr_t CALLBACK run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam);
 
 
 	Style & getCurrentStyler() {
@@ -163,6 +170,8 @@ private :
         }
 	};
 
+	bool getStyleName(TCHAR *styleName, const size_t styleNameLen);
+
 	int whichTabColourIndex();
 	bool isDocumentMapStyle();
 	void move2CtrlRight(int ctrlID, HWND handle2Move, int handle2MoveWidth, int handle2MoveHeight);
@@ -174,28 +183,9 @@ private :
 	void updateUserKeywords();
 	void switchToTheme();
 	void updateThemeName(const generic_string& themeName);
+	std::pair<intptr_t, intptr_t> goToPreferencesSettings();
 
 	void loadLangListFromNppParam();
-
-	void enableFg(bool isEnable) {
-		::EnableWindow(_pFgColour->getHSelf(), isEnable);
-		::EnableWindow(_hFgColourStaticText, isEnable);
-	};
-
-	void enableBg(bool isEnable) {
-		::EnableWindow(_pBgColour->getHSelf(), isEnable);
-		::EnableWindow(_hBgColourStaticText, isEnable);
-	};
-
-	void enableFontName(bool isEnable) {
-		::EnableWindow(_hFontNameCombo, isEnable);
-		::EnableWindow(_hFontNameStaticText, isEnable);
-	};
-
-	void enableFontSize(bool isEnable) {
-		::EnableWindow(_hFontSizeCombo, isEnable);
-		::EnableWindow(_hFontSizeStaticText, isEnable);
-	};
 
 	void enableFontStyle(bool isEnable) {
 		::EnableWindow(_hCheckBold, isEnable);

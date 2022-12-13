@@ -30,11 +30,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #pragma once
+
 #include <mutex>
-
 #include "Utf8_16.h"
-
 
 
 class Notepad_plus;
@@ -53,6 +53,7 @@ enum DocFileStatus {
 };
 
 enum BufferStatusInfo {
+	BufferChangeNone		= 0x000,  // Nothing to change
 	BufferChangeLanguage	= 0x001,  // Language was altered
 	BufferChangeDirty		= 0x002,  // Buffer has changed dirty state
 	BufferChangeFormat		= 0x004,  // EOL type was changed
@@ -69,7 +70,7 @@ enum BufferStatusInfo {
 enum SavingStatus {
 	SaveOK             = 0,
 	SaveOpenFailed     = 1,
-	SaveWrittingFailed = 2
+	SaveWritingFailed  = 2
 };
 
 const TCHAR UNTITLED_STR[] = TEXT("new ");
@@ -79,7 +80,6 @@ class FileManager final {
 public:
 	void init(Notepad_plus* pNotepadPlus, ScintillaEditView* pscratchTilla);
 
-	//void activateBuffer(int index);
 	void checkFilesystemChanges(bool bCheckOnlyCurrentBuffer);
 
 	size_t getNbBuffers() const { return _nbBufs; };
@@ -94,7 +94,7 @@ public:
 
 	void addBufferReference(BufferID id, ScintillaEditView * identifer);	//called by Scintilla etc indirectly
 
-	BufferID loadFile(const TCHAR * filename, Document doc = NULL, int encoding = -1, const TCHAR *backupFileName = NULL, FILETIME fileNameTimestamp = {});	//ID == BUFFER_INVALID on failure. If Doc == NULL, a new file is created, otherwise data is loaded in given document
+	BufferID loadFile(const TCHAR * filename, Document doc = static_cast<Document>(NULL), int encoding = -1, const TCHAR *backupFileName = nullptr, FILETIME fileNameTimestamp = {});	//ID == BUFFER_INVALID on failure. If Doc == NULL, a new file is created, otherwise data is loaded in given document
 	BufferID newEmptyDocument();
 	//create Buffer from existing Scintilla, used from new Scintillas. If dontIncrease = true, then the new document number isnt increased afterwards.
 	//usefull for temporary but neccesary docs
@@ -118,7 +118,7 @@ public:
 		return instance;
 	};
 	int getFileNameFromBuffer(BufferID id, TCHAR * fn2copy);
-	int docLength(Buffer * buffer) const;
+	size_t docLength(Buffer * buffer) const;
 	size_t nextUntitledNewNumber() const;
 
 private:
@@ -141,14 +141,12 @@ private:
 	FileManager& operator=(FileManager&&) = delete;
 
 	int detectCodepage(char* buf, size_t len);
-	bool loadFileData(Document doc, const TCHAR* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat);
+	bool loadFileData(Document doc, int64_t fileSize, const TCHAR* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat);
 	LangType detectLanguageFromTextBegining(const unsigned char *data, size_t dataLen);
 
-
-private:
 	Notepad_plus* _pNotepadPlus = nullptr;
 	ScintillaEditView* _pscratchTilla = nullptr;
-	Document _scratchDocDefault;
+	Document _scratchDocDefault = 0;
 	std::vector<Buffer*> _buffers;
 	BufferID _nextBufferID = 0;
 	size_t _nbBufs = 0;
@@ -166,12 +164,12 @@ public:
 	//Load the document into Scintilla/add to TabBar
 	//The entire lifetime if the buffer, the Document has reference count of _atleast_ one
 	//Destructor makes sure its purged
-	Buffer(FileManager * pManager, BufferID id, Document doc, DocFileStatus type, const TCHAR *fileName);
+	Buffer(FileManager * pManager, BufferID id, Document doc, DocFileStatus type, const TCHAR *fileName, bool isLargeFile);
 
 	// this method 1. copies the file name
 	//             2. determinates the language from the ext of file name
 	//             3. gets the last modified time
-	void setFileName(const TCHAR *fn, LangType defaultLang = L_TEXT);
+	void setFileName(const TCHAR *fn);
 
 	const TCHAR * getFullPathName() const { return _fullPathName.c_str(); }
 
@@ -190,9 +188,9 @@ public:
 
 	bool isDirty() const { return _isDirty; }
 
-	bool isReadOnly() const { return (_isUserReadOnly || _isFileReadOnly); };
+	bool isReadOnly() const { return (_isUserReadOnly || _isFileReadOnly); }
 
-	bool isUntitled() const { return (_currentStatus == DOC_UNNAMED); }
+	bool isUntitled() const { return ((_currentStatus & DOC_UNNAMED) == DOC_UNNAMED); }
 
 	bool getFileReadOnly() const { return _isFileReadOnly; }
 
@@ -275,14 +273,14 @@ public:
 	int addReference(ScintillaEditView * identifier);		//if ID not registered, creates a new Position for that ID and new foldstate
 	int removeReference(ScintillaEditView * identifier);		//reduces reference. If zero, Document is purged
 
-	void setHideLineChanged(bool isHide, int location);
+	void setHideLineChanged(bool isHide, size_t location);
 
 	void setDeferredReload();
 
 	bool getNeedReload() const { return _needReloading; }
 	void setNeedReload(bool reload) { _needReloading = reload; }
 
-	int docLength() const {
+	size_t docLength() const {
 		assert(_pManager != nullptr);
 		return _pManager->docLength(_id);
 	}
@@ -308,14 +306,19 @@ public:
 	bool isUnsync() const { return _isUnsync; }
 	void setUnsync(bool val) { _isUnsync = val; }
 
-	void startMonitoring() { 
-		_isMonitoringOn = true; 
+	bool isSavePointDirty() const { return _isSavePointDirty; }
+	void setSavePointDirty(bool val) { _isSavePointDirty = val; }
+
+	bool isLargeFile() const { return _isLargeFile; }
+
+	void startMonitoring() {
+		_isMonitoringOn = true;
 		_eventHandle = ::CreateEvent(nullptr, TRUE, FALSE, nullptr);
 	};
 
 	HANDLE getMonitoringEvent() const { return _eventHandle; };
 
-	void stopMonitoring() { 
+	void stopMonitoring() {
 		_isMonitoringOn = false;
 		::SetEvent(_eventHandle);
 		::CloseHandle(_eventHandle);
@@ -328,6 +331,11 @@ public:
 	MapPosition getMapPosition() const { return _mapPosition; };
 
 	void langHasBeenSetFromMenu() { _hasLangBeenSetFromMenu = true; };
+
+	bool allowBraceMach() const;
+	bool allowAutoCompletion() const;
+	bool allowSmartHilite() const;
+	bool allowClickableLink() const;
 
 private:
 	int indexOfReference(const ScintillaEditView * identifier) const;
@@ -345,7 +353,7 @@ private:
 
 private:
 	FileManager * _pManager = nullptr;
-	bool _canNotify = false;
+	bool _canNotify = false; // All the notification should be disabled at the beginning 
 	int _references = 0; // if no references file inaccessible, can be closed
 	BufferID _id = nullptr;
 
@@ -360,6 +368,7 @@ private:
 	bool _isUserReadOnly = false;
 	bool _needLexer = false; // new buffers do not need lexing, Scintilla takes care of that
 	//these properties have to be duplicated because of multiple references
+
 	//All the vectors must have the same size at all times
 	std::vector<ScintillaEditView *> _referees; // Instances of ScintillaEditView which contain this buffer
 	std::vector<Position> _positions;
@@ -388,6 +397,10 @@ private:
 	                        // 2. the file is modified by another app but the buffer is not reloaded in Notepad++.
 	                        // Note that if the buffer is untitled, there's no correspondent file on the disk so the buffer is considered as independent therefore synchronized.
 
+	bool _isLargeFile = false; // The loading of huge files will disable automatically 1. auto-completion 2. snapshot periode backup 3. backup on save 4. word wrap
+
+	bool _isSavePointDirty = false; // After converting document to another ecoding, the document becomes dirty, and all the undo states are emptied.
+	                                // This variable member keeps this situation in memory and when the undo state back to the save_point_reached, it'll still be dirty (its original state) 
 
 	// For the monitoring
 	HANDLE _eventHandle = nullptr;

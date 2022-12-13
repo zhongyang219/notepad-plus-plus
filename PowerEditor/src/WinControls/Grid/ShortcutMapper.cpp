@@ -24,7 +24,8 @@ using namespace std;
 void ShortcutMapper::initTabs()
 {
 	HWND hTab = _hTabCtrl = ::GetDlgItem(_hSelf, IDC_BABYGRID_TABBAR);
-	TCITEM tie;
+	NppDarkMode::subclassTabControl(hTab);
+	TCITEM tie{};
 	tie.mask = TCIF_TEXT;
 
 	for (size_t i = 0; i < _nbTab; ++i)
@@ -38,8 +39,8 @@ void ShortcutMapper::initTabs()
     TabCtrl_SetCurSel(_hTabCtrl, int(_currentState));
 
 	// force alignment to babygrid
-	RECT rcTab;
-	WINDOWPLACEMENT wp;
+	RECT rcTab{};
+	WINDOWPLACEMENT wp{};
 	wp.length = sizeof(wp);
 
 	::GetWindowPlacement(hTab, &wp);
@@ -55,20 +56,20 @@ void ShortcutMapper::getClientRect(RECT & rc) const
 {
 		Window::getClientRect(rc);
 
-		RECT tabRect, btnRect;
+		RECT tabRect{}, btnRect{};
 		::GetClientRect(::GetDlgItem(_hSelf, IDC_BABYGRID_TABBAR), &tabRect);
 		int tabH = tabRect.bottom - tabRect.top;
 		int paddingTop = tabH / 2;
 		rc.top += tabH + paddingTop;
 
-		RECT infoRect, filterRect;
+		RECT infoRect{}, filterRect{};
 		::GetClientRect(::GetDlgItem(_hSelf, IDC_BABYGRID_INFO), &infoRect);
 		::GetClientRect(::GetDlgItem(_hSelf, IDC_BABYGRID_FILTER), &filterRect);
 		::GetClientRect(::GetDlgItem(_hSelf, IDOK), &btnRect);
 		int infoH = infoRect.bottom - infoRect.top;
 		int filterH = filterRect.bottom - filterRect.top;
 		int btnH = btnRect.bottom - btnRect.top;
-		int paddingBottom = btnH;
+		int paddingBottom = btnH + NppParameters::getInstance()._dpiManager.scaleY(16);
 		rc.bottom -= btnH + filterH + infoH + paddingBottom;
 
 		rc.left += NppParameters::getInstance()._dpiManager.scaleX(5);
@@ -103,7 +104,7 @@ generic_string ShortcutMapper::getTabString(size_t i) const
 
 void ShortcutMapper::initBabyGrid()
 {
-	RECT rect;
+	RECT rect{};
 	getClientRect(rect);
 
 	_lastHomeRow.resize(5, 1);
@@ -121,6 +122,8 @@ void ShortcutMapper::initBabyGrid()
 	
 	_babygrid.init(_hInst, _hSelf, IDD_BABYGRID_ID1);
 
+	NppDarkMode::setDarkScrollBar(_babygrid.getHSelf());
+
 	_babygrid.setHeaderFont(_hGridFonts.at(GFONT_HEADER));
 	_babygrid.setRowFont(_hGridFonts.at(GFONT_ROWS));
 	
@@ -133,10 +136,46 @@ void ShortcutMapper::initBabyGrid()
 	_babygrid.setHeaderHeight(NppParameters::getInstance()._dpiManager.scaleY(21));
 	_babygrid.setRowHeight(NppParameters::getInstance()._dpiManager.scaleY(21));
 
-	_babygrid.setHighlightColorNoFocus(RGB(200,200,210));
-	_babygrid.setProtectColor(RGB(255,130,120));
-	_babygrid.setHighlightColorProtect(RGB(244,10,20));
-	_babygrid.setHighlightColorProtectNoFocus(RGB(230,194,190));
+	if (NppDarkMode::isEnabled())
+	{
+		_babygrid.setTextColor(NppDarkMode::getDarkerTextColor());
+		_babygrid.setHighlightTextColor(NppDarkMode::getTextColor());
+		_babygrid.setTitleTextColor(NppDarkMode::getTextColor());
+
+		_babygrid.setUnprotectColor(NppDarkMode::getBackgroundColor());
+		_babygrid.setTitleColor(NppDarkMode::getBackgroundColor());
+
+		_babygrid.setBackgroundColor(NppDarkMode::getDarkerBackgroundColor());
+
+		_babygrid.setHighlightColor(NppDarkMode::getHotBackgroundColor());
+		_babygrid.setHighlightColorNoFocus(NppDarkMode::getSofterBackgroundColor());
+		_babygrid.setProtectColor(NppDarkMode::getErrorBackgroundColor());
+		_babygrid.setHighlightColorProtect(RGB(244, 10, 20));
+		_babygrid.setHighlightColorProtectNoFocus(RGB(230, 100, 110));
+
+		_babygrid.setGridlinesColor(NppDarkMode::getEdgeColor());
+		_babygrid.setTitleGridlinesColor(NppDarkMode::getHotEdgeColor());
+	}
+	else
+	{
+		_babygrid.setTextColor(RGB(0, 0, 0));
+		_babygrid.setHighlightTextColor(RGB(255, 255, 255));
+		_babygrid.setTitleTextColor(RGB(0, 0, 0));
+
+		_babygrid.setUnprotectColor(RGB(255, 255, 255));
+		_babygrid.setTitleColor(::GetSysColor(COLOR_BTNFACE));
+
+		_babygrid.setBackgroundColor(::GetSysColor(COLOR_BTNFACE));
+
+		_babygrid.setHighlightColor(RGB(0, 0, 128));
+		_babygrid.setHighlightColorNoFocus(RGB(200, 200, 210));
+		_babygrid.setProtectColor(RGB(255, 130, 120));
+		_babygrid.setHighlightColorProtect(RGB(244, 10, 20));
+		_babygrid.setHighlightColorProtectNoFocus(RGB(230, 194, 190));
+
+		_babygrid.setGridlinesColor(RGB(220, 220, 220));
+		_babygrid.setTitleGridlinesColor(RGB(120, 120, 120));
+	}
 
 	NativeLangSpeaker* nativeLangSpeaker = NppParameters::getInstance().getNativeLangSpeaker();
 	nativeLangSpeaker->changeDlgLang(_hSelf, "ShortcutMapper");
@@ -151,7 +190,7 @@ generic_string ShortcutMapper::getTextFromCombo(HWND hCombo)
 	::SendMessage(hCombo, WM_GETTEXT, NB_MAX, reinterpret_cast<LPARAM>(str));
 	generic_string res(str);
 	return stringToLower(res);
-};
+}
 
 bool ShortcutMapper::isFilterValid(Shortcut sc)
 {
@@ -410,7 +449,7 @@ void ShortcutMapper::fillOutBabyGrid()
 	_babygrid.setInitialContent(false);
 }
 
-INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
@@ -421,6 +460,8 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 			fillOutBabyGrid();
 			_babygrid.display();	
 			goToCenter();
+
+			NppDarkMode::autoSubclassAndThemeChildControls(_hSelf);
 
 			RECT rect;
 			Window::getClientRect(rect);
@@ -435,6 +476,33 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 			return TRUE;
 		}
+
+		case WM_CTLCOLOREDIT:
+		{
+			return NppDarkMode::onCtlColorSofter(reinterpret_cast<HDC>(wParam));
+		}
+
+		case WM_CTLCOLORDLG:
+		case WM_CTLCOLORSTATIC:
+		{
+			return NppDarkMode::onCtlColorDarker(reinterpret_cast<HDC>(wParam));
+		}
+
+		case WM_PRINTCLIENT:
+		{
+			if (NppDarkMode::isEnabled())
+			{
+				return TRUE;
+			}
+			break;
+		}
+
+		case NPPM_INTERNAL_REFRESHDARKMODE:
+		{
+			NppDarkMode::autoThemeChildControls(_hSelf);
+			return TRUE;
+		}
+
 		case WM_GETMINMAXINFO :
 		{
 			MINMAXINFO* mmi = (MINMAXINFO*)lParam;
@@ -878,13 +946,7 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 					{
 						const int row = _babygrid.getSelectedRow();
 						size_t shortcutIndex = _shortcutIndex[row-1];
-						DWORD cmdID = 0;
 						
-						// Menu data
-						int32_t posBase = 0;
-						size_t nbElem = 0;
-						HMENU hMenu = NULL;
-                        int modifCmd = IDM_SETTING_SHORTCUT_MAPPER_RUN;
 						switch(_currentState) 
 						{
 							case STATE_MENU:
@@ -897,9 +959,7 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 							case STATE_MACRO: 
 							{
 								vector<MacroShortcut> & theMacros = nppParam.getMacroList();
-								vector<MacroShortcut>::iterator it = theMacros.begin();
-								cmdID = theMacros[shortcutIndex].getID();
-								theMacros.erase(it + shortcutIndex);
+								theMacros.erase(theMacros.begin() + shortcutIndex);
 
 								//save the current view
 								_lastHomeRow[_currentState] = _babygrid.getHomeRow();
@@ -913,18 +973,39 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 								fillOutBabyGrid();
 
-								// preparing to remove from menu
-								posBase = 6;
-								nbElem = theMacros.size();
-								HMENU m = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
-								hMenu = ::GetSubMenu(m, MENUINDEX_MACRO);
+								// clear all menu
+								DynamicMenu& macroMenu = nppParam.getMacroMenuItems();
+								macroMenu.clearMenu();
 
-								modifCmd = IDM_SETTING_SHORTCUT_MAPPER_MACRO;
+								// Erase the menu item
+								macroMenu.erase(shortcutIndex);
+
+								size_t nbElem = theMacros.size();
 								for (size_t i = shortcutIndex; i < nbElem; ++i)	//lower the IDs of the remaining items so there are no gaps
 								{
 									MacroShortcut ms = theMacros[i];
 									ms.setID(ms.getID() - 1);	//shift all IDs
 									theMacros[i] = ms;
+
+									// Ajust menu items
+									MenuItemUnit& miu = macroMenu.getItemFromIndex(i);
+									miu._cmdID -= 1;	//shift all IDs
+								}
+								// create from scratch according the new menu items structure
+								macroMenu.createMenu();
+
+								HMENU m = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
+								HMENU hMenu = ::GetSubMenu(m, MENUINDEX_MACRO);
+								if (!hMenu) return FALSE;
+
+								int32_t posBase = macroMenu.getPosBase();
+								if (nbElem == 0)
+								{
+									::RemoveMenu(hMenu, IDM_SETTING_SHORTCUT_MAPPER_MACRO, MF_BYCOMMAND);
+
+									//remove separator
+									::RemoveMenu(hMenu, posBase - 1, MF_BYPOSITION);
+									::RemoveMenu(hMenu, posBase - 1, MF_BYPOSITION);
 								}
 							}
 							break; 
@@ -932,9 +1013,7 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 							case STATE_USER: 
 							{
 								vector<UserCommand> & theUserCmds = nppParam.getUserCommandList();
-								vector<UserCommand>::iterator it = theUserCmds.begin();
-								cmdID = theUserCmds[shortcutIndex].getID();
-								theUserCmds.erase(it + shortcutIndex);
+								theUserCmds.erase(theUserCmds.begin() + shortcutIndex);
 
 								//save the current view
 								_lastHomeRow[_currentState] = _babygrid.getHomeRow();
@@ -948,18 +1027,41 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 								fillOutBabyGrid();
 
-								// preparing to remove from menu
-								posBase = 2;
-								nbElem = theUserCmds.size();
-								HMENU m = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
-								hMenu = ::GetSubMenu(m, MENUINDEX_RUN);
+								// clear all menu
+								DynamicMenu& runMenu = nppParam.getRunMenuItems();
+								runMenu.clearMenu();
 
-								modifCmd = IDM_SETTING_SHORTCUT_MAPPER_RUN;
+								// Erase the menu item
+								runMenu.erase(shortcutIndex);
+
+								// preparing to remove from menu
+			
+								size_t nbElem = theUserCmds.size();
 								for (size_t i = shortcutIndex; i < nbElem; ++i)	//lower the IDs of the remaining items so there are no gaps
 								{
 									UserCommand uc = theUserCmds[i];
 									uc.setID(uc.getID() - 1);	//shift all IDs
 									theUserCmds[i] = uc;
+
+									// Ajust menu items
+									MenuItemUnit& miu = runMenu.getItemFromIndex(i);
+									miu._cmdID -= 1;	//shift all IDs
+								}
+								// create from scratch according the new menu items structure
+								runMenu.createMenu();
+
+								HMENU m = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
+								HMENU hMenu = ::GetSubMenu(m, MENUINDEX_RUN);
+								if (!hMenu) return FALSE;
+
+								int32_t posBase = runMenu.getPosBase();
+								if (nbElem == 0)
+								{
+									::RemoveMenu(hMenu, IDM_SETTING_SHORTCUT_MAPPER_RUN, MF_BYCOMMAND);
+
+									//remove separator
+									::RemoveMenu(hMenu, posBase - 1, MF_BYPOSITION);
+									::RemoveMenu(hMenu, posBase - 1, MF_BYPOSITION);
 								}
 							}
 							break;
@@ -968,20 +1070,6 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
                         // updateShortcuts() will update all menu item - the menu items will be shifted
 						nppParam.getAccelerator()->updateShortcuts();
 						nppParam.setShortcutDirty();
-
-						if (!hMenu) return FALSE;
-
-                        // All menu items are shifted up. So we delete the last item
-						::RemoveMenu(hMenu, posBase + static_cast<int32_t>(nbElem), MF_BYPOSITION);
-
-                        if (nbElem == 0) 
-                        {
-                            ::RemoveMenu(hMenu, modifCmd, MF_BYCOMMAND);
-                            
-                            //remove separator
-							::RemoveMenu(hMenu, posBase-1, MF_BYPOSITION);
-                            ::RemoveMenu(hMenu, posBase-1, MF_BYPOSITION);
-						}
 					}
 					return TRUE;
 				}
@@ -997,7 +1085,7 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 
 						case BGN_CELLRCLICKED: //a cell was clicked in the properties grid
 						{
-							POINT p;
+							POINT p{};
 							::GetCursorPos(&p);
 							if (!_rightClickMenu.isCreated())
 							{
@@ -1053,6 +1141,12 @@ INT_PTR CALLBACK ShortcutMapper::run_dlgProc(UINT message, WPARAM wParam, LPARAM
 								case STATE_MACRO:
 								case STATE_USER:
 									return ::SendMessage(_hSelf, WM_COMMAND, IDM_BABYGRID_DELETE, 0);
+
+								case STATE_MENU:
+								case STATE_PLUGIN:
+								case STATE_SCINTILLA:
+								default:
+									break;
 							}
 							return TRUE;
 						}

@@ -39,7 +39,7 @@ ProjectPanel::~ProjectPanel()
 	}
 }
 
-INT_PTR CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -52,9 +52,6 @@ INT_PTR CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM l
 			_hToolbarMenu = CreateWindowEx(0,TOOLBARCLASSNAME,NULL, style,
 								   0,0,0,0,_hSelf, nullptr, _hInst, nullptr);
 
-			NppDarkMode::setDarkLineAbovePanelToolbar(_hToolbarMenu);
-			NppDarkMode::disableVisualStyle(_hToolbarMenu, NppDarkMode::isEnabled());
-
 			TBBUTTON tbButtons[2];
 
 			NativeLangSpeaker *pNativeSpeaker = (NppParameters::getInstance()).getNativeLangSpeaker();
@@ -65,13 +62,13 @@ INT_PTR CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM l
 			tbButtons[0].iBitmap = I_IMAGENONE;
 			tbButtons[0].fsState = TBSTATE_ENABLED;
 			tbButtons[0].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-			tbButtons[0].iString = (INT_PTR)workspace_entry.c_str();
+			tbButtons[0].iString = (intptr_t)workspace_entry.c_str();
 
 			tbButtons[1].idCommand = IDB_EDIT_BTN;
 			tbButtons[1].iBitmap = I_IMAGENONE;
 			tbButtons[1].fsState = TBSTATE_ENABLED;
 			tbButtons[1].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-			tbButtons[1].iString = (INT_PTR)edit_entry.c_str();
+			tbButtons[1].iString = (intptr_t)edit_entry.c_str();
 
 			SendMessage(_hToolbarMenu, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
 			SendMessage(_hToolbarMenu, TB_ADDBUTTONS, sizeof(tbButtons) / sizeof(TBBUTTON), reinterpret_cast<LPARAM>(&tbButtons));
@@ -92,6 +89,9 @@ INT_PTR CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM l
 			if (!openWorkSpace(_workSpaceFilePath.c_str(), true))
 				newWorkSpace();
 
+			NppDarkMode::autoSubclassAndThemeChildControls(_hSelf);
+			NppDarkMode::autoSubclassAndThemeWindowNotify(_hSelf);
+
 			return TRUE;
 		}
 
@@ -99,10 +99,7 @@ INT_PTR CALLBACK ProjectPanel::run_dlgProc(UINT message, WPARAM wParam, LPARAM l
 		{
 			if (static_cast<BOOL>(lParam) != TRUE)
 			{
-				NppDarkMode::setDarkLineAbovePanelToolbar(_hToolbarMenu);
-				NppDarkMode::disableVisualStyle(_hToolbarMenu, NppDarkMode::isEnabled());
-
-				NppDarkMode::setDarkTooltips(_treeView.getHSelf(), NppDarkMode::ToolTipsType::treeview);
+				NppDarkMode::autoThemeChildControls(_hSelf);
 			}
 			NppDarkMode::setTreeViewStyle(_treeView.getHSelf());
 			return TRUE;
@@ -749,17 +746,6 @@ void ProjectPanel::notified(LPNMHDR notification)
 			break;
 		}
 	}
-	else if (notification->code == NM_CUSTOMDRAW && (notification->hwndFrom == _hToolbarMenu))
-	{
-		if (NppDarkMode::isEnabled())
-		{
-			auto nmtbcd = reinterpret_cast<LPNMTBCUSTOMDRAW>(notification);
-			::FillRect(nmtbcd->nmcd.hdc, &nmtbcd->nmcd.rc, NppDarkMode::getDarkerBackgroundBrush());
-			nmtbcd->clrText = NppDarkMode::getTextColor();
-			nmtbcd->clrHighlightHotTrack = NppDarkMode::getHotBackgroundColor();
-			SetWindowLongPtr(_hSelf, DWLP_MSGRESULT, CDRF_NOTIFYITEMDRAW | TBCDRF_HILITEHOTTRACK);
-		}
-	}
 }
 
 void ProjectPanel::setWorkSpaceDirty(bool isDirty)
@@ -771,7 +757,7 @@ void ProjectPanel::setWorkSpaceDirty(bool isDirty)
 
 NodeType ProjectPanel::getNodeType(HTREEITEM hItem)
 {
-	TVITEM tvItem;
+	TVITEM tvItem{};
 	tvItem.hItem = hItem;
 	tvItem.mask = TVIF_IMAGE | TVIF_PARAM;
 	SendMessage(_treeView.getHSelf(), TVM_GETITEM, 0, reinterpret_cast<LPARAM>(&tvItem));
@@ -800,15 +786,14 @@ NodeType ProjectPanel::getNodeType(HTREEITEM hItem)
 
 void ProjectPanel::showContextMenu(int x, int y)
 {
-	TVHITTESTINFO tvHitInfo;
-	HTREEITEM hTreeItem;
+	TVHITTESTINFO tvHitInfo{};
 
 	// Detect if the given position is on the element TVITEM
 	tvHitInfo.pt.x = x;
 	tvHitInfo.pt.y = y;
 	tvHitInfo.flags = 0;
 	ScreenToClient(_treeView.getHSelf(), &(tvHitInfo.pt));
-	hTreeItem = TreeView_HitTest(_treeView.getHSelf(), &tvHitInfo);
+	TreeView_HitTest(_treeView.getHSelf(), &tvHitInfo);
 
 	if (tvHitInfo.hItem != NULL)
 	{
@@ -823,7 +808,7 @@ void ProjectPanel::showContextMenu(int x, int y)
 
 void ProjectPanel::showContextMenuFromMenuKey(HTREEITEM selectedItem, int x, int y)
 {
-	POINT p;
+	POINT p{};
 	p.x = x;
 	p.y = y;
 
@@ -858,8 +843,8 @@ HMENU ProjectPanel::getMenuHandler(HTREEITEM selectedItem)
 
 POINT ProjectPanel::getMenuDisplayPoint(int iButton)
 {
-	POINT p;
-	RECT btnRect;
+	POINT p{};
+	RECT btnRect{};
 	SendMessage(_hToolbarMenu, TB_GETITEMRECT, iButton, reinterpret_cast<LPARAM>(&btnRect));
 
 	p.x = btnRect.left;
@@ -1168,8 +1153,8 @@ void ProjectPanel::popupMenuCmd(int cmdID)
 			FileRelocalizerDlg fileRelocalizerDlg;
 			fileRelocalizerDlg.init(_hInst, _hParent);
 
-			TCHAR textBuffer[MAX_PATH];
-			TVITEM tvItem;
+			TCHAR textBuffer[MAX_PATH] = { '\0' };
+			TVITEM tvItem{};
 			tvItem.hItem = hTreeItem;
 			tvItem.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
 			tvItem.pszText = textBuffer;
@@ -1343,7 +1328,7 @@ void ProjectPanel::addFilesFromDirectory(HTREEITEM hTreeItem)
 	}
 }
 
-INT_PTR CALLBACK FileRelocalizerDlg::run_dlgProc(UINT Message, WPARAM wParam, LPARAM) 
+intptr_t CALLBACK FileRelocalizerDlg::run_dlgProc(UINT Message, WPARAM wParam, LPARAM) 
 {
 	switch (Message)
 	{

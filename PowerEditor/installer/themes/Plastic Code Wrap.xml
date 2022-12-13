@@ -47,7 +47,7 @@ Credits:
             <WordsStyle name="PREPROCESSOR" styleID="9" fgColor="FFAA00" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="DEFAULT" styleID="11" fgColor="F8F8F8" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="INSTRUCTION WORD" styleID="5" fgColor="F6F080" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="instre1" />
-            <WordsStyle name="TYPEWORD" styleID="16" fgColor="FFAA00" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="type1" />
+            <WordsStyle name="TYPE WORD" styleID="16" fgColor="FFAA00" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="type1" />
             <WordsStyle name="NUMBER" styleID="4" fgColor="FF3A83" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="STRING" styleID="6" fgColor="55E439" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="CHARACTER" styleID="7" fgColor="55E439" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
@@ -80,7 +80,6 @@ Credits:
             <WordsStyle name="COMMENT DOC KEYWORD ERROR" styleID="18" fgColor="1E9AE0" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
         </LexerType>
         <LexerType name="java" desc="Java" ext="">
-            <WordsStyle name="PREPROCESSOR" styleID="9" fgColor="FFAA00" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="DEFAULT" styleID="11" fgColor="F8F8F8" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="INSTRUCTION WORD" styleID="5" fgColor="F6F080" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="instre1" />
             <WordsStyle name="TYPE WORD" styleID="16" fgColor="FFAA00" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="type1" />
@@ -393,6 +392,7 @@ Credits:
             <WordsStyle name="IDENTIFIER" styleID="11" fgColor="EB939A" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="COMMENTBLOCK" styleID="12" fgColor="1E9AE0" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="STRINGEOL" styleID="13" fgColor="55E439" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
+            <WordsStyle name="BUILTINS" styleID="14" fgColor="F8F8F8" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" keywordClass="instre2" />
             <WordsStyle name="F STRING" styleID="16" fgColor="55E439" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="F CHARACTER" styleID="17" fgColor="55E439" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
             <WordsStyle name="F TRIPLE" styleID="18" fgColor="1E9AE0" bgColor="0B161D" fontName="" fontStyle="0" fontSize="10" />
@@ -799,6 +799,7 @@ Credits:
         <WidgetStyle name="Edge colour" styleID="0" fgColor="EEEEEC" />
         <WidgetStyle name="Line number margin" styleID="33" fgColor="EEEEEC" bgColor="2E3436" fontName="" fontStyle="0" fontSize="8" />
         <WidgetStyle name="Bookmark margin" styleID="0" bgColor="2E3436" />
+        <WidgetStyle name="Change History margin" styleID="0" bgColor="2E3436" />
         <WidgetStyle name="Fold" styleID="0" fgColor="2E3436" bgColor="EEEEEC" />
         <WidgetStyle name="Fold active" styleID="0" fgColor="2E3436" />
         <WidgetStyle name="Fold margin" styleID="0" fgColor="555753" bgColor="2E3436" />
@@ -818,5 +819,6 @@ Credits:
         <WidgetStyle name="Active tab text" styleID="0" fgColor="000000" />
         <WidgetStyle name="Inactive tabs" styleID="0" fgColor="808080" bgColor="C0C0C0" />
         <WidgetStyle name="URL hovered" styleID="0" fgColor="FFFFFF" />
+        <WidgetStyle name="EOL custom color" styleID="0" fgColor="808080" />
     </GlobalStyles>
 </NotepadPlus>

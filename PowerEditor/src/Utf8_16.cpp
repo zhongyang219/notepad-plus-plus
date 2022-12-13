@@ -28,13 +28,6 @@ const Utf8_16::utf8 Utf8_16::k_Boms[][3] = {
 
 // ==================================================================
 
-Utf8_16_Read::Utf8_16_Read() {
-	m_eEncoding		= uni8Bit;
-	m_nAllocatedBufSize = 0;
-	m_nNewBufSize   = 0;
-	m_pNewBuf		= NULL;
-	m_bFirstRead	= true;
-}
 
 Utf8_16_Read::~Utf8_16_Read()
 {
@@ -290,7 +283,7 @@ Utf8_16_Write::~Utf8_16_Write()
 
 bool Utf8_16_Write::openFile(const TCHAR *name)
 {
-	m_pFile = std::make_unique<Win32_IO_File>(name, Win32_IO_File::Mode::WRITE);
+	m_pFile = std::make_unique<Win32_IO_File>(name);
 
 	if (!m_pFile)
 		return false;
@@ -353,7 +346,7 @@ bool Utf8_16_Write::writeFile(const void* p, unsigned long _size)
         case uni16BE:
         case uni16LE: {
 			static const unsigned int bufSize = 64*1024;
-			utf16 buf[bufSize];
+			utf16* buf = new utf16[bufSize];
             
             Utf8_Iter iter8;
             iter8.set(static_cast<const ubyte*>(p), _size, m_eEncoding);
@@ -370,6 +363,7 @@ bool Utf8_16_Write::writeFile(const void* p, unsigned long _size)
 				}
 			}
 			isOK = true;
+			delete[] buf;
             break;
         }    
         default:
@@ -590,7 +584,7 @@ bool Utf16_Iter::get(utf8 *c)
 		return true;
 	}
 	return false;
-};
+}
 
 void Utf16_Iter::pushout(ubyte c)
 {
@@ -641,12 +635,12 @@ void Utf16_Iter::operator++()
                 m_eState = eStart;
             } else if (m_nCur16 < 0x800) {
                 pushout(static_cast<ubyte>(0xC0 | m_nCur16 >> 6));
-                pushout(0x80 | m_nCur16 & 0x3f);
+                pushout(0x80 | (m_nCur16 & 0x3f));
                 m_eState = eStart;
             } else {
                 pushout(0xE0 | (m_nCur16 >> 12));
-                pushout(0x80 | (m_nCur16 >> 6) & 0x3f);
-                pushout(0x80 | m_nCur16 & 0x3f);
+                pushout(0x80 | ((m_nCur16 >> 6) & 0x3f));
+                pushout(0x80 | (m_nCur16 & 0x3f));
                 m_eState = eStart;
             }
             break;
@@ -655,10 +649,10 @@ void Utf16_Iter::operator++()
 			if ((m_nCur16 >= 0xDC00) && (m_nCur16 < 0xE000))
 			{ // valid surrogate pair
 				UINT code = 0x10000 + ((m_highSurrogate & 0x3ff) << 10) + (m_nCur16 & 0x3ff);
-				pushout(0xf0 | (code >> 18) & 0x07);
-				pushout(0x80 | (code >> 12) & 0x3f);
-				pushout(0x80 | (code >>  6) & 0x3f);
-				pushout(0x80 | code & 0x3f);
+				pushout(0xf0 | ((code >> 18) & 0x07));
+				pushout(0x80 | ((code >> 12) & 0x3f));
+				pushout(0x80 | ((code >>  6) & 0x3f));
+				pushout(0x80 | (code & 0x3f));
 			}
 			m_eState = eStart;
 			break;

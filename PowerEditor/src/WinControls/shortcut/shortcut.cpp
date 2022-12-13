@@ -27,11 +27,9 @@
 
 using namespace std;
 
-const int KEY_STR_LEN = 16;
-
 struct KeyIDNAME {
-	const TCHAR * name;
-	UCHAR id;
+	const TCHAR * name = nullptr;
+	UCHAR id = 0;
 };
 
 KeyIDNAME namedKeyArray[] = {
@@ -161,8 +159,8 @@ void Shortcut::setName(const TCHAR * menuName, const TCHAR * shortcutName)
 {
 	lstrcpyn(_menuName, menuName, nameLenMax);
 	TCHAR const * name = shortcutName ? shortcutName : menuName;
-	int i = 0, j = 0;
-	while (name[j] != 0 && i < (nameLenMax-1))
+	size_t i = 0, j = 0;
+	while (name[j] != 0 && i < (nameLenMax - 1))
 	{
 		if (name[j] != '&')
 		{
@@ -274,7 +272,7 @@ void getKeyStrFromVal(UCHAR keyVal, generic_string & str)
 {
 	str = TEXT("");
 	bool found = false;
-	int i;
+	size_t i;
 	for (i = 0; i < nbKeys; ++i)
 	{
 		if (keyVal == namedKeyArray[i].id)
@@ -369,7 +367,7 @@ void Shortcut::updateConflictState(const bool endSession) const
 	::ShowWindow(::GetDlgItem(_hSelf, IDC_CONFLICT_STATIC), isConflict ? SW_SHOW : SW_HIDE);
 }
 
-INT_PTR CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam) 
+intptr_t CALLBACK Shortcut::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam) 
 {
 	switch (Message)
 	{
@@ -548,7 +546,7 @@ void Accelerator::updateShortcuts()
 	size_t nbPluginCmd = pluginCommands.size();
 
 	delete [] _pAccelArray;
-	_pAccelArray = new ACCEL[nbMenu + nbMacro+nbUserCmd + nbPluginCmd];
+	_pAccelArray = new ACCEL[nbMenu + nbMacro + nbUserCmd + nbPluginCmd];
 	vector<ACCEL> incrFindAcc;
 	vector<ACCEL> findReplaceAcc;
 	int offset = 0;
@@ -1042,7 +1040,7 @@ void ScintillaKeyMap::updateListItem(int index)
 	::SendDlgItemMessage(_hSelf, IDC_LIST_KEYS, LB_DELETESTRING, index+1, 0);
 }
 
-INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam) 
+intptr_t CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam) 
 {
 	
 	switch (Message)
@@ -1078,11 +1076,19 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 		}
 
 		case WM_CTLCOLOREDIT:
-		case WM_CTLCOLORLISTBOX:
 		{
 			if (NppDarkMode::isEnabled())
 			{
 				return NppDarkMode::onCtlColor(reinterpret_cast<HDC>(wParam));
+			}
+			break;
+		}
+
+		case WM_CTLCOLORLISTBOX:
+		{
+			if (NppDarkMode::isEnabled())
+			{
+				return NppDarkMode::onCtlColorListbox(wParam, lParam);
 			}
 			break;
 		}
@@ -1223,11 +1229,14 @@ INT_PTR CALLBACK ScintillaKeyMap::run_dlgProc(UINT Message, WPARAM wParam, LPARA
 CommandShortcut::CommandShortcut(const Shortcut& sc, long id) :	Shortcut(sc), _id(id)
 {
 	_shortcutName = sc.getName();
-	if ( _id < IDM_EDIT)
+	if ( _id >= IDM_WINDOW_SORT_FN_ASC and _id <= IDM_WINDOW_SORT_FS_DSC)
+		_category = TEXT("Window");
+	else if ( _id < IDM_EDIT)
 		_category = TEXT("File");
 	else if ( _id < IDM_SEARCH)
 		_category = TEXT("Edit");
-	else if (_id >= IDM_EDIT_AUTOCOMPLETE and _id <= IDM_EDIT_AUTOCOMPLETE_PATH)
+	else if (((_id >= IDM_EDIT_AUTOCOMPLETE) && (_id <= IDM_EDIT_AUTOCOMPLETE_PATH)) || 
+			 ((_id >= IDM_EDIT_FUNCCALLTIP_PREVIOUS) && (_id <= IDM_EDIT_FUNCCALLTIP_NEXT)))
 		_category = TEXT("Edit");
 	else if ( _id < IDM_VIEW)
 		_category = TEXT("Search");

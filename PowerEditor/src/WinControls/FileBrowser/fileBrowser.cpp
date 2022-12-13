@@ -70,7 +70,7 @@ vector<generic_string> split(const generic_string & string2split, TCHAR sep)
 		}
 	}
 	return splitedStrings;
-};
+}
 
 bool isRelatedRootFolder(const generic_string & relatedRoot, const generic_string & subFolder)
 {
@@ -92,7 +92,7 @@ bool isRelatedRootFolder(const generic_string & relatedRoot, const generic_strin
 	return relatedRootArray[index2Compare] == subFolderArray[index2Compare];
 }
 
-INT_PTR CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -101,9 +101,6 @@ INT_PTR CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 			NppParameters& nppParam = NppParameters::getInstance();
 			int style = WS_CHILD | WS_VISIBLE | CCS_ADJUSTABLE | TBSTYLE_AUTOSIZE | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TRANSPARENT | BTNS_AUTOSIZE | BTNS_SEP | TBSTYLE_TOOLTIPS | TBSTYLE_CUSTOMERASE;
 			_hToolbarMenu = CreateWindowEx(WS_EX_LAYOUTRTL, TOOLBARCLASSNAME, NULL, style, 0, 0, 0, 0, _hSelf, nullptr, _hInst, NULL);
-
-			NppDarkMode::setDarkTooltips(_hToolbarMenu, NppDarkMode::ToolTipsType::toolbar);
-			NppDarkMode::setDarkLineAbovePanelToolbar(_hToolbarMenu);
 
 			// Add the bmap image into toolbar's imagelist
 			int iconSizeDyn = nppParam._dpiManager.scaleX(16);
@@ -126,17 +123,17 @@ INT_PTR CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 			tbButtons[0].iBitmap = 0;
 			tbButtons[0].fsState = TBSTATE_ENABLED;
 			tbButtons[0].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-			tbButtons[0].iString = reinterpret_cast<INT_PTR>(TEXT(""));
+			tbButtons[0].iString = reinterpret_cast<intptr_t>(TEXT(""));
 			tbButtons[1].idCommand = FB_CMD_FOLDALL;
 			tbButtons[1].iBitmap = 1;
 			tbButtons[1].fsState = TBSTATE_ENABLED;
 			tbButtons[1].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-			tbButtons[1].iString = reinterpret_cast<INT_PTR>(TEXT(""));
+			tbButtons[1].iString = reinterpret_cast<intptr_t>(TEXT(""));
 			tbButtons[2].idCommand = FB_CMD_EXPANDALL;
 			tbButtons[2].iBitmap = 2;
 			tbButtons[2].fsState = TBSTATE_ENABLED;
 			tbButtons[2].fsStyle = BTNS_BUTTON | BTNS_AUTOSIZE;
-			tbButtons[2].iString = reinterpret_cast<INT_PTR>(TEXT(""));
+			tbButtons[2].iString = reinterpret_cast<intptr_t>(TEXT(""));
 
 			// tips text for toolbar buttons
 			NativeLangSpeaker *pNativeSpeaker = nppParam.getNativeLangSpeaker();
@@ -173,6 +170,9 @@ INT_PTR CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 			_treeView.makeLabelEditable(false);
 			_treeView.display();
 
+			NppDarkMode::autoSubclassAndThemeChildControls(_hSelf);
+			NppDarkMode::autoSubclassAndThemeWindowNotify(_hSelf);
+
 			return TRUE;
 		}
 
@@ -180,10 +180,7 @@ INT_PTR CALLBACK FileBrowser::run_dlgProc(UINT message, WPARAM wParam, LPARAM lP
 		{
 			if (static_cast<BOOL>(lParam) != TRUE)
 			{
-				NppDarkMode::setDarkTooltips(_hToolbarMenu, NppDarkMode::ToolTipsType::toolbar);
-				NppDarkMode::setDarkLineAbovePanelToolbar(_hToolbarMenu);
-
-				NppDarkMode::setDarkTooltips(_treeView.getHSelf(), NppDarkMode::ToolTipsType::treeview);
+				NppDarkMode::autoThemeChildControls(_hSelf);
 			}
 			NppDarkMode::setTreeViewStyle(_treeView.getHSelf());
 			return TRUE;
@@ -675,14 +672,6 @@ void FileBrowser::notified(LPNMHDR notification)
 			break;
 		}
 	}
-	else if (notification->code == NM_CUSTOMDRAW && (notification->hwndFrom == _hToolbarMenu))
-	{
-		if (NppDarkMode::isEnabled())
-		{
-			auto nmtbcd = reinterpret_cast<LPNMTBCUSTOMDRAW>(notification);
-			::FillRect(nmtbcd->nmcd.hdc, &nmtbcd->nmcd.rc, NppDarkMode::getDarkerBackgroundBrush());
-		}
-	}
 }
 
 BrowserNodeType FileBrowser::getNodeType(HTREEITEM hItem)
@@ -711,15 +700,14 @@ BrowserNodeType FileBrowser::getNodeType(HTREEITEM hItem)
 
 void FileBrowser::showContextMenu(int x, int y)
 {
-	TVHITTESTINFO tvHitInfo;
-	HTREEITEM hTreeItem;
+	TVHITTESTINFO tvHitInfo{};
 
 	// Detect if the given position is on the element TVITEM
 	tvHitInfo.pt.x = x;
 	tvHitInfo.pt.y = y;
 	tvHitInfo.flags = 0;
 	ScreenToClient(_treeView.getHSelf(), &(tvHitInfo.pt));
-	hTreeItem = TreeView_HitTest(_treeView.getHSelf(), &tvHitInfo);
+	TreeView_HitTest(_treeView.getHSelf(), &tvHitInfo);
 
 	if (tvHitInfo.hItem == nullptr)
 	{
@@ -863,7 +851,7 @@ void FileBrowser::popupMenuCmd(int cmdID)
 		{
 			NativeLangSpeaker *pNativeSpeaker = (NppParameters::getInstance()).getNativeLangSpeaker();
 			generic_string openWorkspaceStr = pNativeSpeaker->getAttrNameStr(TEXT("Select a folder to add in Folder as Workspace panel"), FOLDERASWORKSPACE_NODE, "SelectFolderFromBrowserString");
-			generic_string folderPath = folderBrowser(_hParent, openWorkspaceStr.c_str());
+			generic_string folderPath = folderBrowser(_hParent, openWorkspaceStr);
 			if (!folderPath.empty())
 			{
 				addRootFolder(folderPath);
@@ -1616,7 +1604,7 @@ LPCWSTR explainAction(DWORD dwAction)
 	default:
 		return L"BAD DATA";
 	}
-};
+}
 
 
 DWORD WINAPI FolderUpdater::watching(void *params)

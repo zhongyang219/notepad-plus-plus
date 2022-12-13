@@ -31,38 +31,44 @@ BIN_DATA := change.log doLocalConf.xml readme.txt userDefineLangs/
 INSTALLER_DATA := autoCompletion/ functionList/ localization/ themes/
 
 SCINTILLA_DIRECTORY := ../../scintilla
-SCINTILLA_TARGET := libscilexer.a
+SCINTILLA_TARGET := libscintilla.a
+
+LEXILLA_DIRECTORY := ../../lexilla
+LEXILLA_TARGET := liblexilla.a
 
 CXX := $(CROSS_COMPILE)g++
-CXXFLAGS := -include $(GCC_DIRECTORY)/gcc-fixes.h -std=c++17 -Wno-conversion-null
+CXXFLAGS := -include $(GCC_DIRECTORY)/gcc-fixes.h -std=c++20
 RC := $(CROSS_COMPILE)windres
 RCFLAGS :=
-CPP_PATH := $(SCINTILLA_DIRECTORY)/include
+CPP_PATH := $(SCINTILLA_DIRECTORY)/include $(LEXILLA_DIRECTORY)/include
 CPP_DEFINE := UNICODE _UNICODE _WIN32_WINNT=0x0600 TIXML_USE_STL TIXMLA_USE_STL
 LD := $(CXX)
 LDFLAGS := -municode -mwindows
 LD_PATH :=
 LD_LINK := comctl32 crypt32 dbghelp ole32 sensapi shlwapi uuid uxtheme version wininet wintrust
-LD_LINK += $(patsubst lib%.a,%,$(SCINTILLA_TARGET)) imm32 msimg32 ole32 oleaut32
+LD_LINK += $(patsubst lib%.a,%,$(SCINTILLA_TARGET)) $(patsubst lib%.a,%,$(LEXILLA_TARGET)) imm32 msimg32 ole32 oleaut32
 SUBMAKEFLAGS := -O --no-print-directory
 
 # detect a request for a debug build
 ifeq "$(filter-out 0,$(DEBUG))" ""
 BUILD_TYPE := release
 BUILD_SUFFIX :=
-CXXFLAGS += -O2 -Os
+CXXFLAGS += -Os
 CPP_DEFINE += NDEBUG
 LDFLAGS += -s
 else
 BUILD_TYPE := debug
 BUILD_SUFFIX := -debug
-CXXFLAGS += -Og -g -Wall -Wpedantic -Wconversion-null
-#CPP_DEFINE += DEBUG
+CXXFLAGS += -Og -g -Wall -Wpedantic
+CPP_DEFINE += DEBUG
 endif
 
 #
 # preparations
 #
+
+# detect Windows directory
+WIN_DIR := $(or $(windir),$(WINDIR))
 
 # detect target CPU
 TARGET_CPU := $(firstword $(subst -, ,$(shell $(CXX) -dumpmachine)))
@@ -75,15 +81,20 @@ endif
 ifeq "$(TARGET_CPU)" "i686"
 # for some reason i686 versions of MinGW-w64 GCC don't include a linking library for SensApi.dll
 # thus it is generated on the fly, but first check if the DLL is available
-ifeq "$(wildcard $(windir)/system32/SensApi.dll)" ""
+ifeq "$(wildcard $(WIN_DIR)/system32/SensApi.dll)" ""
 $(error $(TARGET_CPU) build requires "%windir%/system32/SensApi.dll" to be present)
 endif
-# detect explicit definition of TARGET_CPU via command line to force a 32-bit build
+# detect explicit definition of TARGET_CPU via command line to force a 32-bit build for MinGW-w64 with support multilib
 ifeq "$(origin TARGET_CPU)" "command line"
 export CXX += -m32
 export LD += -m32
 export RC += -Fpe-i386
 endif
+# detect explicit definition of TARGET_CPU via command line to force a 64-bit build for MinGW-w64 with support multilib
+else ifneq "$(and $(findstring x86_64,$(TARGET_CPU)),$(findstring command line,$(origin TARGET_CPU)))" ""
+export CXX += -m64
+export LD += -m64
+export RC += -Fpe-x86-64
 endif
 
 # define target and build directories and update dependent variables
@@ -96,10 +107,21 @@ BIN_DATA := $(addprefix $(TARGET_DIRECTORY)/,$(BIN_DATA))
 INSTALLER_DATA := $(addprefix $(TARGET_DIRECTORY)/,$(INSTALLER_DATA))
 
 SCINTILLA_TARGET := $(BUILD_DIRECTORY)/$(SCINTILLA_TARGET)
+SCINTILLA_TARGET_PATH := ../../PowerEditor/gcc/$(SCINTILLA_TARGET)
+SCINTILLA_BUILD_DIRECTORY := $(BUILD_DIRECTORY)/_scintilla.build
+SCINTILLA_BUILD_PATH := ../../PowerEditor/gcc/$(SCINTILLA_BUILD_DIRECTORY)
+
+LEXILLA_TARGET := $(BUILD_DIRECTORY)/$(LEXILLA_TARGET)
+LEXILLA_TARGET_PATH := ../../PowerEditor/gcc/$(LEXILLA_TARGET)
+LEXILLA_BUILD_DIRECTORY := $(BUILD_DIRECTORY)/_lexilla.build
+LEXILLA_BUILD_PATH := ../../PowerEditor/gcc/$(LEXILLA_BUILD_DIRECTORY)
 
 LD_PATH += $(BUILD_DIRECTORY)
 
 # detect a build outside of PowerEditor/gcc and update dependent variables
+SPACES_ERROR := "For outside build spaces in the project path are not supported! Please move the project files to the correct path."
+$(foreach makefile,$(MAKEFILE_LIST),$(if $(wildcard $(makefile)),,$(error $(SPACES_ERROR))))
+
 MAKEFILE_DIRECTORY := $(patsubst %/,%,$(dir $(subst \,/,$(firstword $(MAKEFILE_LIST)))))
 ifneq "$(MAKEFILE_DIRECTORY)" "."
 MAKEFILE_PARENT := $(patsubst %/,%,$(dir $(MAKEFILE_DIRECTORY)))
@@ -112,6 +134,12 @@ SRC_EXCLUDE := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(SRC_EXCLUDE))
 INSTALLER_DIRECTORY := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(INSTALLER_DIRECTORY))
 
 SCINTILLA_DIRECTORY := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(SCINTILLA_DIRECTORY))
+SCINTILLA_TARGET_PATH := $(CURDIR)/$(SCINTILLA_TARGET)
+SCINTILLA_BUILD_PATH := $(CURDIR)/$(SCINTILLA_BUILD_DIRECTORY)
+
+LEXILLA_DIRECTORY := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(LEXILLA_DIRECTORY))
+LEXILLA_TARGET_PATH := $(CURDIR)/$(LEXILLA_TARGET)
+LEXILLA_BUILD_PATH := $(CURDIR)/$(LEXILLA_BUILD_DIRECTORY)
 
 CXXFLAGS := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(CXXFLAGS))
 CPP_PATH := $(patsubst ../%,$(MAKEFILE_PARENT)/%,$(CPP_PATH))
@@ -123,7 +151,7 @@ AT := @
 endif
 
 # detect the current operating system
-ifeq "$(windir)" ""
+ifeq "$(WIN_DIR)" ""
 # not a Windows system
 MKDIR := mkdir -p
 CPDIR := cp -r
@@ -133,11 +161,14 @@ RM := rm -f
 normalize-path = $1
 else ifneq "$(wildcard $(dir $(SHELL))ls.exe)" ""
 # a Windows system with a proper shell
-MKDIR := $(dir $(SHELL))mkdir.exe -p
-CPDIR := $(dir $(SHELL))cp.exe -r
-RMDIR := $(dir $(SHELL))rm.exe -rf
-CP := $(dir $(SHELL))cp.exe
-RM := $(dir $(SHELL))rm.exe -f
+NULL :=
+SPACE := $(NULL) $(NULL)
+SHELL_DIRECTORY := $(subst |,$(SPACE),$(dir $(subst $(SPACE),|,$(SHELL))))
+MKDIR := $(SHELL_DIRECTORY)mkdir.exe -p
+CPDIR := $(SHELL_DIRECTORY)cp.exe -r
+RMDIR := $(SHELL_DIRECTORY)rm.exe -rf
+CP := $(SHELL_DIRECTORY)cp.exe
+RM := $(SHELL_DIRECTORY)rm.exe -f
 normalize-path = $1
 else
 # a standard Windows system
@@ -168,72 +199,79 @@ RC_TARGETS := $(patsubst %.rc,$(BUILD_DIRECTORY)/%.res,$(sort $(filter %.rc,$(GC
 # actions
 #
 
-GOALS := $(addprefix $(MAKELEVEL)-,$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all))
-
-.PHONY: .force all binary data clean fullclean
+.PHONY: .force all binary data clean sciclean lexclean fullclean
 .force:
 
-ifneq "$(filter 0-all,$(GOALS))" ""
 SUBMAKEFLAGS += $(if $(NUMBER_OF_PROCESSORS),-j$(NUMBER_OF_PROCESSORS),)
-.NOTPARALLEL:
-all: $(SCINTILLA_TARGET)
+
+all: $(SCINTILLA_TARGET) $(LEXILLA_TARGET)
 	$(AT)$(MAKE) -f $(firstword $(MAKEFILE_LIST)) $(SUBMAKEFLAGS) binary
-else
-all: binary
-endif
-ifeq "$(filter 1-binary,$(GOALS))" ""
-$(SCINTILLA_TARGET): .force
-endif
 
 $(BUILD_DIRECTORY):
-	@echo * creating BUILD_DIRECTORY $@
+	@echo + creating BUILD_DIRECTORY $@
 	$(AT)$(MKDIR) $(call normalize-path,$(sort $@ $(patsubst %/,%,$(dir $(CXX_TARGETS) $(RC_TARGETS)))))
 
-$(SCINTILLA_TARGET): | $(BUILD_DIRECTORY)
-	$(AT)$(MAKE) $(SUBMAKEFLAGS) -C $(SCINTILLA_DIRECTORY)/win32 LIBLEX=$(CURDIR)/$(SCINTILLA_TARGET) $(CURDIR)/$(SCINTILLA_TARGET)
+$(SCINTILLA_BUILD_DIRECTORY):
+	@echo + creating SCINTILLA_BUILD_DIRECTORY $@
+	$(AT)$(MKDIR) $(call normalize-path,$(SCINTILLA_BUILD_DIRECTORY))
+
+$(LEXILLA_BUILD_DIRECTORY):
+	@echo + creating LEXILLA_BUILD_DIRECTORY $@
+	$(AT)$(MKDIR) $(call normalize-path,$(LEXILLA_BUILD_DIRECTORY))
+
+ifeq "$(MAKELEVEL)" "0"
+$(SCINTILLA_TARGET): .force
+$(LEXILLA_TARGET): .force
+endif
+
+$(SCINTILLA_TARGET): | $(BUILD_DIRECTORY) $(SCINTILLA_BUILD_DIRECTORY)
+	$(AT)$(MAKE) $(SUBMAKEFLAGS) -C $(SCINTILLA_DIRECTORY)/win32 -f makefile -f ../../boostregex/nppSpecifics_mingw.mak DIR_O=$(SCINTILLA_BUILD_PATH) LIBSCI=$(SCINTILLA_TARGET_PATH) $(SCINTILLA_TARGET_PATH)
+
+$(LEXILLA_TARGET): | $(BUILD_DIRECTORY) $(LEXILLA_BUILD_DIRECTORY)
+	$(AT)$(MAKE) $(SUBMAKEFLAGS) -C $(LEXILLA_DIRECTORY)/src DIR_O=$(LEXILLA_BUILD_PATH) LIBLEXILLA=$(LEXILLA_TARGET_PATH) $(LEXILLA_TARGET_PATH)
 
 binary: $(TARGET_BINARY) data
-	@echo *** $(TARGET_CPU) $(BUILD_TYPE) : $(CURDIR)/$(TARGET_BINARY) ***
+	@echo +++ $(TARGET_CPU) $(BUILD_TYPE) : $(CURDIR)/$(TARGET_BINARY) ***
 
 $(CXX_TARGETS): $(BUILD_DIRECTORY)/%.o: %.cpp | $(BUILD_DIRECTORY)
-	@echo * compiling $<
+	@echo + compiling $<
 	$(AT)$(CXX) $(CXXFLAGS) $(addprefix -I,$(CPP_PATH)) $(addprefix -D,$(CPP_DEFINE)) -MMD -c -o $@ $<
 
 $(RC_TARGETS): $(BUILD_DIRECTORY)/%.res: %.rc | $(BUILD_DIRECTORY)
-	@echo * compiling $<
+	@echo + compiling $<
 	$(AT)$(RC) $(RCFLAGS) $(addprefix -I,$(CPP_PATH)) $(addprefix -D,$(CPP_DEFINE)) -O coff -o $@ -i $<
 
 ifeq "$(TARGET_CPU)" "i686"
 $(TARGET_BINARY): $(BUILD_DIRECTORY)/libsensapi.a
 $(BUILD_DIRECTORY)/libsensapi.a: | $(BUILD_DIRECTORY)
-	@echo * generating $@
-	$(AT)gendef $(call normalize-path,$(firstword $(wildcard $(windir)/syswow64/SensApi.dll $(windir)/system32/SensApi.dll)))
+	@echo + generating $@
+	$(AT)gendef $(call normalize-path,$(firstword $(wildcard $(WIN_DIR)/syswow64/SensApi.dll $(WIN_DIR)/system32/SensApi.dll)))
 	$(AT)dlltool -mi386 -f--32 -d SensApi.def -k -l $(call normalize-path,$@)
 	$(AT)$(RM) SensApi.def
 endif
 
 $(TARGET_DIRECTORY):
-	@echo * creating TARGET_DIRECTORY $@
+	@echo + creating TARGET_DIRECTORY $@
 	$(AT)$(MKDIR) $(call normalize-path,$@)
 
-$(TARGET_BINARY): $(CXX_TARGETS) $(RC_TARGETS) $(SCINTILLA_TARGET) | $(TARGET_DIRECTORY)
-	@echo * linking $@
+$(TARGET_BINARY): $(CXX_TARGETS) $(RC_TARGETS) $(SCINTILLA_TARGET) $(LEXILLA_TARGET) | $(TARGET_DIRECTORY)
+	@echo + linking $@
 	$(AT)$(LD) $(LDFLAGS) $(filter-out %.a,$^) $(addprefix -L,$(LD_PATH)) $(addprefix -l,$(LD_LINK)) -static -o $@
 
 data: $(patsubst %/,%,$(SRC_DATA) $(BIN_DATA) $(INSTALLER_DATA))
 
 $(patsubst %/,%,$(filter %/,$(SRC_DATA))): $(TARGET_DIRECTORY)/%: $(SRC_DIRECTORY)/% | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CPDIR) $(call normalize-path,$< $@)
 $(filter-out %/,$(SRC_DATA)): $(TARGET_DIRECTORY)/%: $(SRC_DIRECTORY)/% | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CP) $(call normalize-path,$< $@)
 
 $(patsubst %/,%,$(filter %/,$(BIN_DATA))): $(TARGET_DIRECTORY)/%: $(BIN_DIRECTORY)/% | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CPDIR) $(call normalize-path,$< $@)
 $(filter-out %/,$(BIN_DATA)): $(TARGET_DIRECTORY)/%: $(BIN_DIRECTORY)/% | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CP) $(call normalize-path,$< $@)
 
 $(TARGET_DIRECTORY)/autoCompletion: $(INSTALLER_DIRECTORY)/APIs
@@ -241,15 +279,20 @@ $(TARGET_DIRECTORY)/functionList: $(INSTALLER_DIRECTORY)/functionList
 $(TARGET_DIRECTORY)/localization: $(INSTALLER_DIRECTORY)/nativeLang
 $(TARGET_DIRECTORY)/themes: $(INSTALLER_DIRECTORY)/themes
 $(patsubst %/,%,$(filter %/,$(INSTALLER_DATA))): | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CPDIR) $(call normalize-path,$< $@)
 $(filter-out %/,$(INSTALLER_DATA)): | $(TARGET_DIRECTORY)
-	@echo * copying $@
+	@echo + copying $@
 	$(AT)$(CP) $(call normalize-path,$< $@)
 
 clean:
 	-$(AT)$(RMDIR) $(call normalize-path,$(BUILD_DIRECTORY))
-	-$(AT)$(MAKE) $(SUBMAKEFLAGS) -C $(SCINTILLA_DIRECTORY)/win32 $@
+
+sciclean:
+	-$(AT)$(RMDIR) $(call normalize-path,$(SCINTILLA_BUILD_DIRECTORY))
+
+lexclean:
+	-$(AT)$(RMDIR) $(call normalize-path,$(LEXILLA_BUILD_DIRECTORY))
 
 fullclean: clean
 	-$(AT)$(RMDIR) $(call normalize-path,$(TARGET_DIRECTORY))

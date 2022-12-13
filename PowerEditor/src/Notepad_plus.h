@@ -94,7 +94,7 @@ struct VisibleGUIConf final
 	bool _isStatusbarShown = true;
 
 	//used by fullscreen
-	WINDOWPLACEMENT _winPlace = {0};
+	WINDOWPLACEMENT _winPlace = {};
 
 	//used by distractionFree
 	bool _was2ViewModeOn = false;
@@ -154,7 +154,7 @@ public:
 
 	void setTitle();
 	void getTaskListInfo(TaskListInfo *tli);
-
+	size_t getNbDirtyBuffer(int view);
 	// For filtering the modeless Dialog message
 
 	//! \name File Operations
@@ -195,6 +195,7 @@ public:
 	bool saveGUIParams();
 	bool saveProjectPanelsParams();
 	bool saveFileBrowserParam();
+	bool saveColumnEditorParams();
 	void saveDockingParams();
     void saveUserDefineLangs();
     void saveShortcuts();
@@ -207,7 +208,6 @@ public:
 	bool fileLoadSession(const TCHAR* fn = nullptr);
 	const TCHAR * fileSaveSession(size_t nbFile, TCHAR ** fileNames, const TCHAR *sessionFile2save, bool includeFileBrowser = false);
 	const TCHAR * fileSaveSession(size_t nbFile = 0, TCHAR** fileNames = nullptr);
-	void changeToolBarIcons();
 
 	bool doBlockComment(comment_mode currCommentMode);
 	bool doStreamComment();
@@ -355,13 +355,13 @@ private:
 	bool _isFolding = false;
 
 	//For Dynamic selection highlight
-	Sci_CharacterRange _prevSelectedRange;
+	Sci_CharacterRangeFull _prevSelectedRange;
 
 	//Synchronized Scolling
 	struct SyncInfo final
 	{
-		int _line = 0;
-		int _column = 0;
+		intptr_t _line = 0;
+		intptr_t _column = 0;
 		bool _isSynScollV = false;
 		bool _isSynScollH = false;
 
@@ -372,7 +372,7 @@ private:
 	bool _isUDDocked = false;
 
 	trayIconControler* _pTrayIco = nullptr;
-	int _zoomOriginalValue = 0;
+	intptr_t _zoomOriginalValue = 0;
 
 	Accelerator _accelerator;
 	ScintillaAccelerator _scintaccelerator;
@@ -383,11 +383,8 @@ private:
 	bool _isFileOpening = false;
 	bool _isAdministrator = false;
 
-	bool _isEndingSessionButNotReady = false; // If Windows 10 update needs to restart 
-                                              // and Notepad++ has one (some) dirty document(s)
-                                              // and "Enable session snapshot and periodic backup" is not enabled
-                                              // then WM_ENDSESSION is send with wParam == FALSE
-                                              // in this case this boolean is set true, so Notepad++ will quit and its current session will be saved 
+	bool _isNppSessionSavedAtExit = false; // guard flag, it prevents emptying of the N++ session.xml in case of multiple WM_ENDSESSION or WM_CLOSE messages
+
 	ScintillaCtrls _scintillaCtrls4Plugins;
 
 	std::vector<std::pair<int, int> > _hideLinesMarks;
@@ -451,7 +448,7 @@ private:
 	void loadBufferIntoView(BufferID id, int whichOne, bool dontClose = false);		//Doesnt _activate_ the buffer
 	bool removeBufferFromView(BufferID id, int whichOne);	//Activates alternative of possible, or creates clean document if not clean already
 
-	bool activateBuffer(BufferID id, int whichOne);			//activate buffer in that view if found
+	bool activateBuffer(BufferID id, int whichOne, bool forceApplyHilite = false);			//activate buffer in that view if found
 	void notifyBufferActivated(BufferID bufid, int view);
 	void performPostReload(int whichOne);
 //END: Document management
@@ -496,36 +493,36 @@ private:
 		::CheckMenuItem(_mainMenuHandle, itemID, MF_BYCOMMAND | (willBeChecked?MF_CHECKED:MF_UNCHECKED));
 	}
 
-	bool isConditionExprLine(int lineNumber);
-	int findMachedBracePos(size_t startPos, size_t endPos, char targetSymbol, char matchedSymbol);
+	bool isConditionExprLine(intptr_t lineNumber);
+	intptr_t findMachedBracePos(size_t startPos, size_t endPos, char targetSymbol, char matchedSymbol);
 	void maintainIndentation(TCHAR ch);
 
-	void addHotSpot(ScintillaEditView* view = NULL);
+	void addHotSpot(ScintillaEditView* view = nullptr);
 
-    void bookmarkAdd(int lineno) const {
+    void bookmarkAdd(intptr_t lineno) const {
 		if (lineno == -1)
-			lineno = static_cast<int32_t>(_pEditView->getCurrentLineNumber());
+			lineno = _pEditView->getCurrentLineNumber();
 		if (!bookmarkPresent(lineno))
 			_pEditView->execute(SCI_MARKERADD, lineno, MARK_BOOKMARK);
 	}
 
-    void bookmarkDelete(int lineno) const {
-		if (lineno == -1)
-			lineno = static_cast<int32_t>(_pEditView->getCurrentLineNumber());
+    void bookmarkDelete(size_t lineno) const {
+		if (lineno == static_cast<size_t>(-1))
+			lineno = _pEditView->getCurrentLineNumber();
 		while (bookmarkPresent(lineno))
 			_pEditView->execute(SCI_MARKERDELETE, lineno, MARK_BOOKMARK);
 	}
 
-    bool bookmarkPresent(int lineno) const {
+    bool bookmarkPresent(intptr_t lineno) const {
 		if (lineno == -1)
-			lineno = static_cast<int32_t>(_pEditView->getCurrentLineNumber());
+			lineno = _pEditView->getCurrentLineNumber();
 		LRESULT state = _pEditView->execute(SCI_MARKERGET, lineno);
 		return ((state & (1 << MARK_BOOKMARK)) != 0);
 	}
 
-    void bookmarkToggle(int lineno) const {
+    void bookmarkToggle(intptr_t lineno) const {
 		if (lineno == -1)
-			lineno = static_cast<int32_t>(_pEditView->getCurrentLineNumber());
+			lineno = _pEditView->getCurrentLineNumber();
 
 		if (bookmarkPresent(lineno))
 			bookmarkDelete(lineno);
@@ -542,11 +539,11 @@ private:
 	void cutMarkedLines();
 	void deleteMarkedLines(bool isMarked);
 	void pasteToMarkedLines();
-	void deleteMarkedline(int ln);
+	void deleteMarkedline(size_t ln);
 	void inverseMarks();
-	void replaceMarkedline(int ln, const TCHAR *str);
-	generic_string getMarkedLine(int ln);
-    void findMatchingBracePos(int & braceAtCaret, int & braceOpposite);
+	void replaceMarkedline(size_t ln, const TCHAR *str);
+	generic_string getMarkedLine(size_t ln);
+    void findMatchingBracePos(intptr_t& braceAtCaret, intptr_t& braceOpposite);
     bool braceMatch();
 
     void activateNextDoc(bool direction);
@@ -564,6 +561,7 @@ private:
 	void autoCompFromCurrentFile(bool autoInsert = true);
 	void showFunctionComp();
 	void showPathCompletion();
+	void showFunctionNextHint(bool isNext = true);
 
 	//void changeStyleCtrlsLang(HWND hDlg, int *idArray, const char **translatedText);
 	void setCodePageForInvisibleView(Buffer const* pBuffer);
@@ -571,7 +569,7 @@ private:
 	bool findInOpenedFiles();
 	bool findInCurrentFile(bool isEntireDoc);
 
-	void getMatchedFileNames(const TCHAR *dir, const std::vector<generic_string> & patterns, std::vector<generic_string> & fileNames, bool isRecursive, bool isInHiddenDir);
+	void getMatchedFileNames(const TCHAR *dir, size_t level, const std::vector<generic_string> & patterns, std::vector<generic_string> & fileNames, bool isRecursive, bool isInHiddenDir);
 	void doSynScorll(HWND hW);
 	void setWorkingDir(const TCHAR *dir);
 	bool str2Cliboard(const generic_string & str2cpy);
@@ -585,6 +583,7 @@ private:
 	Style * getStyleFromName(const TCHAR *styleName);
 	bool dumpFiles(const TCHAR * outdir, const TCHAR * fileprefix = TEXT(""));	//helper func
 	void drawTabbarColoursFromStylerArray();
+	void drawAutocompleteColoursFromTheme(COLORREF fgColor, COLORREF bgColor);
 	void drawDocumentMapColoursFromStylerArray();
 
 	std::vector<generic_string> loadCommandlineParams(const TCHAR * commandLine, const CmdLineParams * pCmdParams) {
@@ -603,7 +602,7 @@ private:
 	void removeDuplicateLines();
 	void launchAnsiCharPanel();
 	void launchClipboardHistoryPanel();
-	void launchDocumentListPanel();
+	void launchDocumentListPanel(bool changeFromBtnCmd = false);
 	void checkProjectMenuItem();
 	void launchProjectPanel(int cmdID, ProjectPanel ** pProjPanel, int panelID);
 	void launchDocMap();
@@ -635,5 +634,8 @@ private:
 	};
 
 	void monitoringStartOrStopAndUpdateUI(Buffer* pBuf, bool isStarting);
+	void createMonitoringThread(Buffer* pBuf);
 	void updateCommandShortcuts();
+
+	HBITMAP generateSolidColourMenuItemIcon(COLORREF colour);
 };

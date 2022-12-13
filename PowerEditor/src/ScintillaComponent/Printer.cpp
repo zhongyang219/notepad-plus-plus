@@ -44,7 +44,7 @@ void replaceStr(generic_string & str, generic_string str2BeReplaced, generic_str
 		str.replace(pos, str2BeReplaced.length(), replacement);
 }
 
-void Printer::init(HINSTANCE hInst, HWND hwnd, ScintillaEditView *pSEView, bool showDialog, int startPos, int endPos, bool isRTL)
+void Printer::init(HINSTANCE hInst, HWND hwnd, ScintillaEditView *pSEView, bool showDialog, size_t startPos, size_t endPos, bool isRTL)
 {
 	_pSEView = pSEView;
 	_startPos = startPos;
@@ -84,11 +84,7 @@ void Printer::init(HINSTANCE hInst, HWND hwnd, ScintillaEditView *pSEView, bool 
 
 
 size_t Printer::doPrint(bool justDoIt)
-{/*
-	if (!::PrintDlg(&_pdlg))
-			return 0;
-*/
-
+{
 	const NppGUI & nppGUI = (NppParameters::getInstance()).getNppGUI();
 
 	POINT ptPage;
@@ -207,9 +203,9 @@ size_t Printer::doPrint(bool justDoIt)
 	}
 	
 	// By default, we will print all the document
-	long lengthPrinted = 0;
-	long lengthDoc = _pSEView->getCurrentDocLen();
-	long lengthDocMax = lengthDoc;
+	size_t lengthPrinted = 0;
+	size_t lengthDoc = _pSEView->getCurrentDocLen();
+	size_t lengthDocMax = lengthDoc;
 
 	// In the case that the print dialog was launched and that there's a range of selection
 	// We print the range of selection
@@ -217,13 +213,13 @@ size_t Printer::doPrint(bool justDoIt)
 	{
 		if (_startPos > _endPos) 
 		{
-			lengthPrinted = static_cast<long>(_endPos);
-			lengthDoc = static_cast<long>(_startPos);
+			lengthPrinted = _endPos;
+			lengthDoc = _startPos;
 		}
 		else 
 		{
-			lengthPrinted = static_cast<long>(_startPos);
-			lengthDoc = static_cast<long>(_endPos);
+			lengthPrinted = _startPos;
+			lengthDoc = _endPos;
 		}
 
 		if (lengthPrinted < 0)
@@ -350,10 +346,10 @@ size_t Printer::doPrint(bool justDoIt)
 	while (lengthPrinted < lengthDoc) 
 	{
 		bool printPage = (!(_pdlg.Flags & PD_PAGENUMS) ||
-		             (pageNum >= _pdlg.nFromPage) && (pageNum <= _pdlg.nToPage));
-					 
+					((pageNum >= _pdlg.nFromPage) && (pageNum <= _pdlg.nToPage)));
+
 		if (!justDoIt)
-			printPage = false;		 
+			printPage = false;
 
 		TCHAR pageString[32];
 		wsprintf(pageString, TEXT("%0d"), pageNum);
@@ -425,9 +421,9 @@ size_t Printer::doPrint(bool justDoIt)
 			}
 		}
 		
-		frPrint.chrg.cpMin = lengthPrinted;
-		frPrint.chrg.cpMax = lengthDoc;
-		lengthPrinted = long(_pSEView->execute(SCI_FORMATRANGE, printPage, reinterpret_cast<LPARAM>(&frPrint)));
+		frPrint.chrg.cpMin = static_cast<Sci_Position>(lengthPrinted);
+		frPrint.chrg.cpMax = static_cast<Sci_Position>(lengthDoc);
+		lengthPrinted = _pSEView->execute(SCI_FORMATRANGEFULL, printPage, reinterpret_cast<LPARAM>(&frPrint));
 
 		if (printPage) 
 		{
@@ -502,7 +498,7 @@ size_t Printer::doPrint(bool justDoIt)
 	if (!nppGUI._printSettings._printLineNumber)
 		_pSEView->showMargin(ScintillaEditView::_SC_MARGE_LINENUMBER, isShown);
 
-	_pSEView->execute(SCI_FORMATRANGE, FALSE, 0);
+	_pSEView->execute(SCI_FORMATRANGEFULL, FALSE, 0);
 	::EndDoc(_pdlg.hDC);
 	::DeleteDC(_pdlg.hDC);
 

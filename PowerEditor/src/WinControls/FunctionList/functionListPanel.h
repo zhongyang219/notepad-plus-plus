@@ -24,6 +24,12 @@
 #define FL_PANELTITLE     TEXT("Function List")
 #define FL_FUCTIONLISTROOTNODE "FunctionList"
 
+#define FL_SORTLOCALNODENAME        "SortTip"
+#define FL_RELOADLOCALNODENAME      "ReloadTip"
+#define FL_PREFERENCESLOCALNODENAME "PreferencesTip"
+
+#define FL_PREFERENCE_INITIALSORT "PreferencesInitialSort"
+
 class ScintillaEditView;
 
 /*
@@ -97,7 +103,8 @@ public:
 	void searchFuncAndSwitchView();
 
 protected:
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	HMENU _hPreferencesMenu = NULL;
 
 private:
 	HWND _hToolbarMenu = nullptr;
@@ -107,17 +114,18 @@ private:
 	TreeView _treeView;
 	TreeView _treeViewSearchResult;
 
-	SCROLLINFO si;
+	SCROLLINFO si = {};
 	long _findLine = -1;
 	long _findEndLine = -1;
 	HTREEITEM _findItem = nullptr;
 
 	generic_string _sortTipStr = TEXT("Sort");
 	generic_string _reloadTipStr = TEXT("Reload");
+	generic_string _preferenceTipStr = TEXT("Preferences");
 
 	std::vector<foundInfo> _foundFuncInfos;
 
-	std::vector<generic_string*> posStrs;
+	std::vector<generic_string*> _posStrs;
 
 	ScintillaEditView **_ppEditView = nullptr;
 	FunctionParsersManager _funcParserMgr;
@@ -125,7 +133,7 @@ private:
 	std::vector<TreeParams> _treeParams;
 	HIMAGELIST _hTreeViewImaLst = nullptr;
 
-	generic_string parseSubLevel(size_t begin, size_t end, std::vector< generic_string > dataToSearch, int & foundPos);
+	generic_string parseSubLevel(size_t begin, size_t end, std::vector< generic_string > dataToSearch, intptr_t& foundPos);
 	size_t getBodyClosePos(size_t begin, const TCHAR *bodyOpenSymbol, const TCHAR *bodyCloseSymbol);
 	void notified(LPNMHDR notification);
 	void addInStateArray(TreeStateNode tree2Update, const TCHAR *searchText, bool isSorted);
@@ -134,5 +142,7 @@ private:
 	bool shouldSort();
 	void setSort(bool isEnabled);
 	void findMarkEntry(HTREEITEM htItem, LONG line);
+	void initPreferencesMenu();
+	void showPreferencesMenu();
 };
 

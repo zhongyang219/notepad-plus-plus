@@ -1,59 +1,34 @@
-Notepad++ v8.1.9.1 bug-fixes and new enhancement:
+Notepad++ v8.4.7 bug-fixes and new features:
 
-1.  Fix a regression of saving problem.
-2.  Fix a regression of reloading false alarm from the network drive.
-3.  Make Function list/Project panel/Folder as Workspace icon display correct under high DPI.
-4.  Make UDL generic dark mode (working for all dark theme) possible via UDL UI.
-5.  Fix phantom docked panels issue after restoring from systray.
-6.  Enable backup on save (simple) feature by default (only for the new installation).
-
-
-Notepad++ v8.1.9 bug-fixes:
-
-1.  Fix empty file with non-Unicode encoding cannot be saved issue.
-2.  Fix language list in Style Configurator not being reloaded issue.
-
-
-Notepad++ v8.1.8 bug-fixes:
-
-1.  Fix config files (XML) saving performance regression.
-2.  Workaround Microsoft dark mode API bug of Windows 11.
+1.  Fix empty session issue due to forced Windows update restart.
+2.  Fix printing with extra background colors issue due to Change History.
+3.  Update to Scintilla 5.3.1 and Lexilla 5.2.0.
+4.  Updated nlohmann json to 3.11.2 and Boost to 1.80.0.
+5.  Make large file restriction configurable.
+6.  Optimizing open/save large files time.
+7.  Remember Column Editor settings through the sessions.
+8.  Fix plugin admin search issue.
+9.  Installer enhancement: prevent arm64 installer from installing on non ARM64 system.
+10. Installer enhancement: remember "Don't use_%APPDATA%" option.
+11. Add new API NPPM_GETBOOKMARKID for getting bookmark ID.
+12. Enhance "Go To" dialog: update line/position data dynamically.
+13. Fix lines hiding issue.
+14. Fix language detected from content not applied if default language is set.
+15. Fix long filters get truncated in Find in Files feature.
+16. Add ESC Key for aborting "Move to Recycle Bin" confirmation prompt.
 
 
-Notepad++ v8.1.7 bug-fixes:
-
-1.  Fix empty file not being saved regression.
-2.  Fix white flash in dark mode on CMD launch with position parameters.
-3.  Enhance dark themes for some programming languages (JSON, Python & Makefile).
-4.  Fix "Run macro until the end of file" command skipping the last line issue.
-5.  Fix tooltip layout and position in RTL mode.
-6.  Fix docking problem for dockable panel in RTL mode.
-
-
-Notepad++ v8.1.6 bug-fixes:
-
-1.  Fix NUL file-corruption issue after system shutting down brutally (power cuts).
-2.  Fix session lost issue after MS update restarting Windows.
-3.  Make Markdown UDL work in every dark theme.
-4.  Fix file can be marked as saved even it's been deleted outside. 
-5.  Fix white flash on Notepad++ startup in dark mode issue.
-6.  Fix status bar text display glitchy in dark mode.
-7.  Fix docked window sizing problem in RTL mode.
-8.  Fix floating panel movement problem in RTL mode.
-9.  Fix Print GUI bug in Preferences dialog.
-
-
-More fixes & implementations detail:
-https://notepad-plus-plus.org/downloads/v8.1.9.1/
+Get more info on
+https://notepad-plus-plus.org/downloads/v8.4.7/
 
 
 Included plugins:
 
-1.  NppExport v0.3
-2.  Converter v4.3
-3.  Mime Tool v2.6
+1.  NppExport v0.4
+2.  Converter v4.5
+3.  Mime Tool v2.9
 
 
 Updater (Installer only):
 
-* WinGup (for Notepad++) v5.2.2
+* WinGup (for Notepad++) v5.2.4

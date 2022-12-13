@@ -144,7 +144,7 @@ protected :
 		return (((DockingCont *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA)))->runProcTab(hwnd, Message, wParam, lParam));
 	};
 
-    virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+    virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 	// drawing functions
 	void drawCaptionItem(DRAWITEMSTRUCT *pDrawItemStruct);
@@ -176,6 +176,7 @@ private:
 	bool _isFloating = FALSE;
 	HWND _hCaption = nullptr;
 	HWND _hContTab = nullptr;
+	HWND _hTabUpdown = nullptr;
 
 	// horizontal font for caption and tab
 	HFONT _hFont = nullptr;
@@ -187,7 +188,7 @@ private:
 	BOOL _isMouseDown = FALSE;
 	BOOL _isMouseClose = FALSE;
 	BOOL _isMouseOver = FALSE;
-	RECT _rcCaption = {0};
+	RECT _rcCaption = {};
 	
 	// tab style
 	BOOL _bDrawOgLine = FALSE;

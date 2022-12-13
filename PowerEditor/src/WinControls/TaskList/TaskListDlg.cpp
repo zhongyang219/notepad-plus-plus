@@ -22,7 +22,11 @@
 
 int TaskListDlg::_instanceCount = 0;
 
-LRESULT CALLBACK hookProc(int nCode, WPARAM wParam, LPARAM lParam)
+static HWND hWndServer = nullptr;
+static HHOOK hook = nullptr;
+static winVer windowsVersion = WV_UNKNOWN;
+
+static LRESULT CALLBACK hookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if ((nCode >= 0) && (wParam == WM_RBUTTONUP))
     {
@@ -56,7 +60,7 @@ LRESULT CALLBACK hookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	return static_cast<int32_t>(::DialogBoxParam(_hInst, MAKEINTRESOURCE(IDD_TASKLIST_DLG), _hParent, dlgProc, reinterpret_cast<LPARAM>(this)));
 }
 
-INT_PTR CALLBACK TaskListDlg::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK TaskListDlg::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam)
 {
 	switch (Message)
 	{
@@ -100,6 +104,15 @@ INT_PTR CALLBACK TaskListDlg::run_dlgProc(UINT Message, WPARAM wParam, LPARAM lP
 			if (NppDarkMode::isEnabled())
 			{
 				return NppDarkMode::onCtlColorDarker(reinterpret_cast<HDC>(wParam));
+			}
+			break;
+		}
+
+		case WM_PRINTCLIENT:
+		{
+			if (NppDarkMode::isEnabled())
+			{
+				return TRUE;
 			}
 			break;
 		}

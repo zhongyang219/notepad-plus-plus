@@ -53,16 +53,37 @@ void ColumnEditorDlg::display(bool toShow) const
         ::SetFocus(::GetDlgItem(_hSelf, ID_GOLINE_EDIT));
 }
 
-INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM)
+intptr_t CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
 		case WM_INITDIALOG :
 		{
+			ColumnEditorParam colEditParam = NppParameters::getInstance()._columnEditParam;
 			NppDarkMode::autoSubclassAndThemeChildControls(_hSelf);
 
-			switchTo(activeText);
-			::SendDlgItemMessage(_hSelf, IDC_COL_DEC_RADIO, BM_SETCHECK, TRUE, 0);
+			::SetDlgItemText(_hSelf, IDC_COL_TEXT_EDIT, colEditParam._insertedTextContent.c_str());
+			
+			if (colEditParam._initialNum != -1)
+				::SetDlgItemInt(_hSelf, IDC_COL_INITNUM_EDIT, colEditParam._initialNum, FALSE);
+			if (colEditParam._increaseNum != -1)
+				::SetDlgItemInt(_hSelf, IDC_COL_INCREASENUM_EDIT, colEditParam._increaseNum, FALSE);
+			if (colEditParam._repeatNum != -1)
+				::SetDlgItemInt(_hSelf, IDC_COL_REPEATNUM_EDIT, colEditParam._repeatNum, FALSE);
+			
+			::SendDlgItemMessage(_hSelf, IDC_COL_LEADZERO_CHECK, BM_SETCHECK, colEditParam._isLeadingZeros, 0);
+				
+			int format = IDC_COL_DEC_RADIO;
+			if (colEditParam._formatChoice == 1)
+				format = IDC_COL_HEX_RADIO;
+			else if (colEditParam._formatChoice == 2)
+				format = IDC_COL_OCT_RADIO;
+			else if (colEditParam._formatChoice == 3)
+				format = IDC_COL_BIN_RADIO;
+
+			::SendDlgItemMessage(_hSelf, format, BM_SETCHECK,  TRUE, 0);
+
+			switchTo(colEditParam._mainChoice);
 			goToCenter();
 
 			return TRUE;
@@ -78,13 +99,34 @@ INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARA
 		}
 
 		case WM_CTLCOLORDLG:
-		case WM_CTLCOLORSTATIC:
 		{
 			if (NppDarkMode::isEnabled())
 			{
 				return NppDarkMode::onCtlColorDarker(reinterpret_cast<HDC>(wParam));
 			}
 			break;
+		}
+
+		case WM_CTLCOLORSTATIC:
+		{
+			auto hdcStatic = reinterpret_cast<HDC>(wParam);
+			auto dlgCtrlID = ::GetDlgCtrlID(reinterpret_cast<HWND>(lParam));
+
+			bool isStaticText = (dlgCtrlID == IDC_COL_INITNUM_STATIC ||
+				dlgCtrlID == IDC_COL_INCRNUM_STATIC ||
+				dlgCtrlID == IDC_COL_REPEATNUM_STATIC);
+			//set the static text colors to show enable/disable instead of ::EnableWindow which causes blurry text
+			if (isStaticText)
+			{
+				bool isTextEnabled = isCheckedOrNot(IDC_COL_NUM_RADIO);
+				return NppDarkMode::onCtlColorDarkerBGStaticText(hdcStatic, isTextEnabled);
+			}
+
+			if (NppDarkMode::isEnabled())
+			{
+				return NppDarkMode::onCtlColorDarker(hdcStatic);
+			}
+			return FALSE;
 		}
 
 		case WM_PRINTCLIENT:
@@ -100,7 +142,7 @@ INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARA
 		{
 			if (NppDarkMode::isEnabled())
 			{
-				RECT rc = { 0 };
+				RECT rc = {};
 				getClientRect(rc);
 				::FillRect(reinterpret_cast<HDC>(wParam), &rc, NppDarkMode::getDarkerBackgroundBrush());
 				return TRUE;
@@ -187,7 +229,7 @@ INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARA
 										
 									s2r.insert(posRelative2Start, str);
 								}
-								(*_ppEditView)->replaceTarget(s2r.c_str(), int(lineBegin), int(lineEnd));
+								(*_ppEditView)->replaceTarget(s2r.c_str(), lineBegin, lineEnd);
 							}
 							delete [] line;
 						}
@@ -316,7 +358,34 @@ INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARA
 				case IDC_COL_TEXT_RADIO :
 				case IDC_COL_NUM_RADIO :
 				{
-					switchTo((wParam == IDC_COL_TEXT_RADIO)? activeText : activeNumeric);
+					ColumnEditorParam& colEditParam = NppParameters::getInstance()._columnEditParam;
+					colEditParam._mainChoice = (wParam == IDC_COL_TEXT_RADIO) ? activeText : activeNumeric;
+					switchTo(colEditParam._mainChoice);
+					return TRUE;
+				}
+
+				case IDC_COL_DEC_RADIO:
+				case IDC_COL_OCT_RADIO:
+				case IDC_COL_HEX_RADIO:
+				case IDC_COL_BIN_RADIO:
+				{
+					ColumnEditorParam& colEditParam = NppParameters::getInstance()._columnEditParam;
+					colEditParam._formatChoice = 0; // dec
+					if (wParam == IDC_COL_HEX_RADIO)
+						colEditParam._formatChoice = 1;
+					else if (wParam == IDC_COL_OCT_RADIO)
+						colEditParam._formatChoice = 2;
+					else if (wParam == IDC_COL_BIN_RADIO)
+						colEditParam._formatChoice = 3;
+
+					return TRUE;
+				}
+
+				case IDC_COL_LEADZERO_CHECK:
+				{
+					ColumnEditorParam& colEditParam = NppParameters::getInstance()._columnEditParam;
+					bool isLeadingZeros = (BST_CHECKED == ::SendDlgItemMessage(_hSelf, IDC_COL_LEADZERO_CHECK, BM_GETCHECK, 0, 0));
+					colEditParam._isLeadingZeros = isLeadingZeros;
 					return TRUE;
 				}
 
@@ -324,14 +393,66 @@ INT_PTR CALLBACK ColumnEditorDlg::run_dlgProc(UINT message, WPARAM wParam, LPARA
 				{
 					switch (HIWORD(wParam))
 					{
-						case EN_SETFOCUS :
-						case BN_SETFOCUS :
-							//updateLinesNumbers();
-							return TRUE;
-						default :
-							return TRUE;
+						case EN_CHANGE:
+						{
+							ColumnEditorParam& colEditParam = NppParameters::getInstance()._columnEditParam;
+							const int stringSize = MAX_PATH;
+							TCHAR str[stringSize];
+
+							switch (LOWORD(wParam))
+							{								
+								case IDC_COL_TEXT_EDIT:
+								{
+									::GetDlgItemText(_hSelf, LOWORD(wParam), str, stringSize);
+									colEditParam._insertedTextContent = str;
+									return TRUE;
+								}
+								case IDC_COL_INITNUM_EDIT:
+								{
+									::GetDlgItemText(_hSelf, LOWORD(wParam), str, stringSize);
+
+									if (lstrcmp(str, TEXT("")) == 0)
+									{
+										colEditParam._initialNum = -1;
+										return TRUE;
+									}
+
+									int num = ::GetDlgItemInt(_hSelf, LOWORD(wParam), NULL, TRUE);
+									colEditParam._initialNum = num;
+									return TRUE;
+								}
+								case IDC_COL_INCREASENUM_EDIT:
+								{
+									::GetDlgItemText(_hSelf, LOWORD(wParam), str, stringSize);
+
+									if (lstrcmp(str, TEXT("")) == 0)
+									{
+										colEditParam._increaseNum = -1;
+										return TRUE;
+									}
+
+									int num = ::GetDlgItemInt(_hSelf, LOWORD(wParam), NULL, TRUE);
+									colEditParam._increaseNum = num;
+									return TRUE;
+								}
+								case IDC_COL_REPEATNUM_EDIT:
+								{
+									::GetDlgItemText(_hSelf, LOWORD(wParam), str, stringSize);
+
+									if (lstrcmp(str, TEXT("")) == 0)
+									{
+										colEditParam._repeatNum = -1;
+										return TRUE;
+									}
+
+									int num = ::GetDlgItemInt(_hSelf, LOWORD(wParam), NULL, TRUE);
+									colEditParam._repeatNum = num;
+									return TRUE;
+								}
+							}
+						}
+						break;
 					}
-					break;
 				}
 			}
 		}
@@ -350,11 +471,8 @@ void ColumnEditorDlg::switchTo(bool toText)
 
 	HWND hNum = ::GetDlgItem(_hSelf, IDC_COL_INITNUM_EDIT);
 	::SendDlgItemMessage(_hSelf, IDC_COL_NUM_RADIO, BM_SETCHECK, !toText, 0);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_INITNUM_STATIC), !toText);
 	::EnableWindow(hNum, !toText);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_INCRNUM_STATIC), !toText);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_INCREASENUM_EDIT), !toText);
-	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_REPEATNUM_STATIC), !toText);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_REPEATNUM_EDIT), !toText);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_DEC_RADIO), !toText);
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_HEX_RADIO), !toText);
@@ -363,6 +481,8 @@ void ColumnEditorDlg::switchTo(bool toText)
 	::EnableWindow(::GetDlgItem(_hSelf, IDC_COL_LEADZERO_CHECK), !toText);
 
 	::SetFocus(toText?hText:hNum);
+
+	redraw();
 }
 
 UCHAR ColumnEditorDlg::getFormat() 

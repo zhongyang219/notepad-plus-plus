@@ -42,12 +42,6 @@ struct TaskListInfo {
 	int _currentIndex = -1;
 };
 
-static HWND hWndServer = NULL;
-static HHOOK hook = NULL;
-static winVer windowsVersion = WV_UNKNOWN;
-
-static LRESULT CALLBACK hookProc(int nCode, WPARAM wParam, LPARAM lParam);
-
 class TaskListDlg : public StaticDialog
 {
 public :
@@ -61,7 +55,7 @@ public :
 		virtual void destroy() {};
 
 protected :
-	INT_PTR CALLBACK run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam);
+	intptr_t CALLBACK run_dlgProc(UINT Message, WPARAM wParam, LPARAM lParam);
 
 private :
 	TaskList _taskList;

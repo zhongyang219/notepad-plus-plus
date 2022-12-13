@@ -26,14 +26,8 @@
 class Win32_IO_File final
 {
 public:
-	enum class Mode {
-		READ,
-		WRITE,
-		APPEND
-	};
-
-	Win32_IO_File(const char *fname, Mode fmode = Mode::READ);
-	Win32_IO_File(const wchar_t *fname, Mode fmode = Mode::READ);
+	Win32_IO_File(const char *fname);
+	Win32_IO_File(const wchar_t *fname);
 
 	Win32_IO_File() = delete;
 	Win32_IO_File(const Win32_IO_File&) = delete;
@@ -48,8 +42,9 @@ public:
 	};
 
 	void close();
-	int_fast64_t getSize();
-	unsigned long read(void *rbuf, unsigned long buf_size);
+	//int_fast64_t getSize();
+	//unsigned long read(void *rbuf, unsigned long buf_size);
+
 	bool write(const void *wbuf, unsigned long buf_size);
 
 	bool writeStr(const std::string& str) {
@@ -58,8 +53,11 @@ public:
 
 private:
 	HANDLE	_hFile		{INVALID_HANDLE_VALUE};
-	Mode	_hMode		{Mode::READ};
 	bool	_written	{false};
+	std::string _path;
 
-	void fillCreateParams(DWORD& access, DWORD& share, DWORD& disp, DWORD& attrib);
+	const DWORD _accessParam  { GENERIC_READ | GENERIC_WRITE };
+	const DWORD _shareParam   { FILE_SHARE_READ | FILE_SHARE_WRITE };
+	const DWORD _dispParam    { CREATE_ALWAYS };
+	const DWORD _attribParam  { FILE_ATTRIBUTE_NORMAL };
 };

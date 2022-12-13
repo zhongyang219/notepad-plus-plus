@@ -21,6 +21,7 @@
 #include "shortcut.h"
 #include "Parameters.h"
 #include "Notepad_plus.h"
+#include <strsafe.h>
 
 
 void Command::extractArgs(TCHAR* cmd2Exec, size_t cmd2ExecLen, TCHAR* args, size_t argsLen, const TCHAR* cmdEntier)
@@ -95,6 +96,8 @@ int whichVar(TCHAR *str)
 		return CURRENT_LINE;
 	else if (!lstrcmp(currentColumn, str))
 		return CURRENT_COLUMN;
+	else if (!lstrcmp(currentLineStr, str))
+		return CURRENT_LINESTR;
 
 	return VAR_NOT_RECOGNIZED;
 }
@@ -123,7 +126,7 @@ void expandNppEnvironmentStrs(const TCHAR *strSrc, TCHAR *stringDest, size_t str
 		{
 			if (iEnd != -1)
 			{
-				TCHAR str[MAX_PATH];
+				TCHAR str[MAX_PATH] = { '\0' };
 				int m = 0;
 				for (int k = iBegin  ; k <= iEnd ; ++k)
 					str[m++] = strSrc[k];
@@ -143,8 +146,9 @@ void expandNppEnvironmentStrs(const TCHAR *strSrc, TCHAR *stringDest, size_t str
 					TCHAR expandedStr[CURRENTWORD_MAXLENGTH] = { '\0' };
 					if (internalVar == CURRENT_LINE || internalVar == CURRENT_COLUMN)
 					{
-						int lineNumber = static_cast<int>(::SendMessage(hWnd, RUNCOMMAND_USER + internalVar, 0, 0));
-						wsprintf(expandedStr, TEXT("%d"), lineNumber);
+						size_t lineNumber = ::SendMessage(hWnd, RUNCOMMAND_USER + internalVar, 0, 0);
+						std::wstring lineNumStr = std::to_wstring(lineNumber);
+						StringCchCopyW(expandedStr, CURRENTWORD_MAXLENGTH, lineNumStr.c_str());
 					}
 					else
 						::SendMessage(hWnd, RUNCOMMAND_USER + internalVar, CURRENTWORD_MAXLENGTH, reinterpret_cast<LPARAM>(expandedStr));
@@ -217,7 +221,7 @@ HINSTANCE Command::run(HWND hWnd, const TCHAR* cwd)
 	// As per MSDN (https://msdn.microsoft.com/en-us/library/windows/desktop/bb762153(v=vs.85).aspx)
 	// If the function succeeds, it returns a value greater than 32.
 	// If the function fails, it returns an error value that indicates the cause of the failure.
-	int retResult = static_cast<int>(reinterpret_cast<INT_PTR>(res));
+	int retResult = static_cast<int>(reinterpret_cast<intptr_t>(res));
 	if (retResult <= 32)
 	{
 		generic_string errorMsg;
@@ -238,7 +242,7 @@ HINSTANCE Command::run(HWND hWnd, const TCHAR* cwd)
 	return res;
 }
 
-INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+intptr_t CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
@@ -280,7 +284,7 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if (NppDarkMode::isEnabled())
 			{
-				RECT rc = { 0 };
+				RECT rc = {};
 				getClientRect(rc);
 				::FillRect(reinterpret_cast<HDC>(wParam), &rc, NppDarkMode::getDarkerBackgroundBrush());
 				return TRUE;
@@ -309,7 +313,7 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 					_cmdLine = cmd;
 
 					HINSTANCE hInst = run(_hParent);
-					if (reinterpret_cast<INT_PTR>(hInst) > 32)
+					if (reinterpret_cast<intptr_t>(hInst) > 32)
 					{
 						addTextToCombo(_cmdLine.c_str());
 						display(false);
@@ -323,11 +327,15 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 				case IDC_BUTTON_SAVE :
 				{
-					std::vector<UserCommand> & theUserCmds = (NppParameters::getInstance()).getUserCommandList();
+					NppParameters& nppParams = NppParameters::getInstance();
+					std::vector<UserCommand> & theUserCmds = nppParams.getUserCommandList();
 
 					int nbCmd = static_cast<int32_t>(theUserCmds.size());
-
 					int cmdID = ID_USER_CMD + nbCmd;
+
+					DynamicMenu& runMenu = nppParams.getRunMenuItems();
+					int nbTopLevelItem = runMenu.getTopLevelItemNumber();
+
 					TCHAR cmd[MAX_PATH];
 					::GetDlgItemText(_hSelf, IDC_COMBO_RUN_PATH, cmd, MAX_PATH);
 					UserCommand uc(Shortcut(), cmd, cmdID);
@@ -337,25 +345,26 @@ INT_PTR CALLBACK RunDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 					{
 						HMENU mainMenu = reinterpret_cast<HMENU>(::SendMessage(_hParent, NPPM_INTERNAL_GETMENU, 0, 0));
 						HMENU hRunMenu = ::GetSubMenu(mainMenu, MENUINDEX_RUN);
-						int const posBase = 2;
+						int const posBase = runMenu.getPosBase();
 						
-						if (nbCmd == 0)
+						if (nbTopLevelItem == 0)
 							::InsertMenu(hRunMenu, posBase - 1, MF_BYPOSITION, static_cast<unsigned int>(-1), 0);
 						
 						theUserCmds.push_back(uc);
-						::InsertMenu(hRunMenu, posBase + nbCmd, MF_BYPOSITION, cmdID, uc.toMenuItemString().c_str());
+						runMenu.push_back(MenuItemUnit(cmdID, uc.getName()));
+						::InsertMenu(hRunMenu, posBase + nbTopLevelItem, MF_BYPOSITION, cmdID, uc.toMenuItemString().c_str());
 
 						NppParameters& nppParams = NppParameters::getInstance();
-                        if (nbCmd == 0)
+                        if (nbTopLevelItem == 0)
                         {
                             // Insert the separator and modify/delete command
-							::InsertMenu(hRunMenu, posBase + nbCmd + 1, MF_BYPOSITION, static_cast<unsigned int>(-1), 0);
+							::InsertMenu(hRunMenu, posBase + nbTopLevelItem + 1, MF_BYPOSITION, static_cast<unsigned int>(-1), 0);
 							NativeLangSpeaker *pNativeLangSpeaker = nppParams.getNativeLangSpeaker();
 							generic_string nativeLangShortcutMapperMacro = pNativeLangSpeaker->getNativeLangMenuString(IDM_SETTING_SHORTCUT_MAPPER_MACRO);
 							if (nativeLangShortcutMapperMacro == TEXT(""))
-								nativeLangShortcutMapperMacro = TEXT("Modify Shortcut/Delete Command...");
+								nativeLangShortcutMapperMacro = runMenu.getLastCmdLabel();
 
-							::InsertMenu(hRunMenu, posBase + nbCmd + 2, MF_BYCOMMAND, IDM_SETTING_SHORTCUT_MAPPER_RUN, nativeLangShortcutMapperMacro.c_str());
+							::InsertMenu(hRunMenu, posBase + nbTopLevelItem + 2, MF_BYCOMMAND, IDM_SETTING_SHORTCUT_MAPPER_RUN, nativeLangShortcutMapperMacro.c_str());
                         }
 						nppParams.getAccelerator()->updateShortcuts();
 						nppParams.setShortcutDirty();
@@ -421,4 +430,4 @@ void RunDlg::doDialog(bool isRTL)
     // Adjust the position in the center
 	goToCenter();
 	::SetFocus(::GetDlgItem(_hSelf, IDC_COMBO_RUN_PATH));
-};
+}

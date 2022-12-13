@@ -15,6 +15,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+// don't use resource editor it will corrupt this file,
+// it will default to default ANSI code page (e.g. #pragma code_page(1252)),
+// this will ignore line with #pragma code_page(65001) below,
+// and change non ANSI symbol to ?
+#pragma code_page(65001)
+
 #include <windows.h>
 #include "resource.h"
 #include "menuCmdID.h"
@@ -37,10 +43,10 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE    "CompanyName",        "Don HO don.h@free.fr\0"
-            VALUE    "FileDescription",    "Notepad++ : a free (GPL) source code editor\0"
+            VALUE    "FileDescription",    "Notepad++\0"
             VALUE    "FileVersion",        VERSION_VALUE
             VALUE    "InternalName",       "notepad++.exe\0"
-            VALUE    "LegalCopyright",     "Copyleft 1998-2021 by Don HO\0"
+            VALUE    "LegalCopyright",     "Copyleft 1998-2022 by Don HO\0"
             VALUE    "OriginalFilename",   "notepad++.exe\0"
             VALUE    "ProductName",        "Notepad++\0"
             VALUE    "ProductVersion",     VERSION_VALUE
@@ -367,13 +373,15 @@ IDI_FUNCLIST_ROOT               BITMAP      "icons/project_file.bmp"
 IDI_FUNCLIST_NODE               BITMAP      "icons/funcList_node.bmp"
 IDI_FUNCLIST_LEAF               BITMAP      "icons/funcList_leaf.bmp"
 
-IDI_FUNCLIST_SORTBUTTON         BITMAP      "icons/funclstSort.bmp"
-IDI_FUNCLIST_RELOADBUTTON       BITMAP      "icons/funclstReload.bmp"
-IDI_FUNCLIST_SORTBUTTON_DM      BITMAP      "icons/darkMode/panels/funclstSort.bmp"
-IDI_FUNCLIST_RELOADBUTTON_DM    BITMAP      "icons/darkMode/panels/funclstReload.bmp"
+IDI_FUNCLIST_SORTBUTTON            BITMAP      "icons/funclstSort.bmp"
+IDI_FUNCLIST_RELOADBUTTON          BITMAP      "icons/funclstReload.bmp"
+IDI_FUNCLIST_PREFERENCEBUTTON      BITMAP      "icons/funclstPreferences.bmp"
+IDI_FUNCLIST_SORTBUTTON_DM         BITMAP      "icons/darkMode/panels/funclstSort.bmp"
+IDI_FUNCLIST_RELOADBUTTON_DM       BITMAP      "icons/darkMode/panels/funclstReload.bmp"
+IDI_FUNCLIST_PREFERENCEBUTTON_DM   BITMAP      "icons/darkMode/panels/funclstPreferences.bmp"
 
 
-IDI_GET_INFO_FROM_TOOLTIP       ICON        "icons/MoreOnTooltip.ico"
+IDI_GET_INFO_FROM_TOOLTIP       ICON        "icons/moreOnTooltip.ico"
 
 IDR_M30_MENU MENU
 BEGIN
@@ -385,7 +393,7 @@ BEGIN
         BEGIN
             MENUITEM "Explorer",       IDM_FILE_OPEN_FOLDER
             MENUITEM "cmd",            IDM_FILE_OPEN_CMD
-			MENUITEM SEPARATOR
+            MENUITEM SEPARATOR
             MENUITEM "Folder as Workspace", IDM_FILE_CONTAININGFOLDERASWORKSPACE
         END
         MENUITEM "Open in &Default Viewer",          IDM_FILE_OPEN_DEFAULT_VIEWER
@@ -398,7 +406,7 @@ BEGIN
         MENUITEM "&Rename...",                       IDM_FILE_RENAME
         MENUITEM "&Close",                           IDM_FILE_CLOSE
         MENUITEM "Clos&e All",                       IDM_FILE_CLOSEALL
-        POPUP "Close &More"
+        POPUP "Close &Multiple Documents"
         BEGIN
             MENUITEM "Close All but Active Document",    IDM_FILE_CLOSEALL_BUT_CURRENT
             MENUITEM "Close All to the Left",            IDM_FILE_CLOSEALL_TOLEFT
@@ -436,9 +444,12 @@ BEGIN
         END
         POPUP "Cop&y to Clipboard"
         BEGIN
-                MENUITEM "Current Full File path to Clipboard",    IDM_EDIT_FULLPATHTOCLIP
-                MENUITEM "Current Filename to Clipboard",          IDM_EDIT_FILENAMETOCLIP
-                MENUITEM "Current Dir. Path to Clipboard",         IDM_EDIT_CURRENTDIRTOCLIP
+                MENUITEM "Copy Current Full File path",    IDM_EDIT_FULLPATHTOCLIP
+                MENUITEM "Copy Current Filename",          IDM_EDIT_FILENAMETOCLIP
+                MENUITEM "Copy Current Dir. Path",         IDM_EDIT_CURRENTDIRTOCLIP
+                MENUITEM SEPARATOR
+                MENUITEM "Copy All Filenames",             IDM_EDIT_COPY_ALL_NAMES
+                MENUITEM "Copy All File Paths",            IDM_EDIT_COPY_ALL_PATHS
         END
         POPUP "&Indent"
         BEGIN
@@ -497,6 +508,8 @@ BEGIN
             MENUITEM "Function Completion",         IDM_EDIT_AUTOCOMPLETE
             MENUITEM "Word Completion",             IDM_EDIT_AUTOCOMPLETE_CURRENTFILE
             MENUITEM "Function Parameters Hint",    IDM_EDIT_FUNCCALLTIP
+            MENUITEM "Function Parameters Previous Hint", IDM_EDIT_FUNCCALLTIP_PREVIOUS
+            MENUITEM "Function Parameters Next Hint",     IDM_EDIT_FUNCCALLTIP_NEXT
             MENUITEM "Path Completion",             IDM_EDIT_AUTOCOMPLETE_PATH
         END
         POPUP "&EOL Conversion"
@@ -692,16 +705,23 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Move Tab Forward",        IDM_VIEW_TAB_MOVEFORWARD
             MENUITEM "Move Tab Backward",       IDM_VIEW_TAB_MOVEBACKWARD
+            MENUITEM SEPARATOR
+            MENUITEM "Apply Color 1",           IDM_VIEW_TAB_COLOUR_1
+            MENUITEM "Apply Color 2",           IDM_VIEW_TAB_COLOUR_2
+            MENUITEM "Apply Color 3",           IDM_VIEW_TAB_COLOUR_3
+            MENUITEM "Apply Color 4",           IDM_VIEW_TAB_COLOUR_4
+            MENUITEM "Apply Color 5",           IDM_VIEW_TAB_COLOUR_5
+            MENUITEM "Remove Color",            IDM_VIEW_TAB_COLOUR_NONE
         END
         MENUITEM "Word wrap",                   IDM_VIEW_WRAP
         MENUITEM "Focus on Another View",         IDM_VIEW_SWITCHTO_OTHER_VIEW
         MENUITEM "Hide Lines",                  IDM_VIEW_HIDELINES
         MENUITEM SEPARATOR
-        MENUITEM "Fold All",                    IDM_VIEW_TOGGLE_FOLDALL
-        MENUITEM "Unfold All",                  IDM_VIEW_TOGGLE_UNFOLDALL
-        MENUITEM "Collapse Current Level",      IDM_VIEW_FOLD_CURRENT
-        MENUITEM "Uncollapse Current Level",    IDM_VIEW_UNFOLD_CURRENT
-        POPUP "Collapse Level"
+        MENUITEM "Fold All",                    IDM_VIEW_FOLDALL
+        MENUITEM "Unfold All",                  IDM_VIEW_UNFOLDALL
+        MENUITEM "Fold Current Level",          IDM_VIEW_FOLD_CURRENT
+        MENUITEM "Unfold Current Level",        IDM_VIEW_UNFOLD_CURRENT
+        POPUP "Fold Level"
         BEGIN
             MENUITEM "1",   IDM_VIEW_FOLD_1
             MENUITEM "2",   IDM_VIEW_FOLD_2
@@ -712,7 +732,7 @@ BEGIN
             MENUITEM "7",   IDM_VIEW_FOLD_7
             MENUITEM "8",   IDM_VIEW_FOLD_8
         END
-        POPUP "Uncollapse Level"
+        POPUP "Unfold Level"
         BEGIN
             MENUITEM "1",    IDM_VIEW_UNFOLD_1
             MENUITEM "2",    IDM_VIEW_UNFOLD_2
@@ -962,6 +982,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Define your language...", IDM_LANG_USER_DLG
         MENUITEM "Open User Defined Language folder...",      IDM_LANG_OPENUDLDIR
+        MENUITEM "Notepad++ User Defined Languages Collection", IDM_LANG_UDLCOLLECTION_PROJECT_SITE
         MENUITEM "User-Defined",            IDM_LANG_USER
     END
 
@@ -1110,6 +1131,7 @@ BEGIN
     BEGIN
         MENUITEM "Define your language...",   IDM_LANG_USER_DLG
         MENUITEM "Open User Defined Language folder...",        IDM_LANG_OPENUDLDIR
+        MENUITEM "Notepad++ User Defined Languages Collection", IDM_LANG_UDLCOLLECTION_PROJECT_SITE
     END
     MENUITEM "User-Defined",              IDM_LANG_USER
     END
@@ -1159,6 +1181,29 @@ BEGIN
         MENUITEM "&Run...",    IDM_EXECUTE
     END
 
+    POPUP "&Plugins"
+    BEGIN
+        MENUITEM "Open Plugins Folder...",    IDM_SETTING_OPENPLUGINSDIR
+    END
+
+    POPUP "&Window"
+    BEGIN
+        POPUP "Sort By"
+            BEGIN
+                MENUITEM "Name A to Z",                 IDM_WINDOW_SORT_FN_ASC
+                MENUITEM "Name Z to A",                 IDM_WINDOW_SORT_FN_DSC
+                MENUITEM "Path A to Z",                 IDM_WINDOW_SORT_FP_ASC
+                MENUITEM "Path Z to A",                 IDM_WINDOW_SORT_FP_DSC
+                MENUITEM "Type A to Z",                 IDM_WINDOW_SORT_FT_ASC
+                MENUITEM "Type Z to A",                 IDM_WINDOW_SORT_FT_DSC
+                MENUITEM "Size Smaller to Larger",      IDM_WINDOW_SORT_FS_ASC
+                MENUITEM "Size Larger to Smaller",      IDM_WINDOW_SORT_FS_DSC
+            END
+        MENUITEM "&Windows...",                 IDM_WINDOW_WINDOWS
+        MENUITEM SEPARATOR
+        MENUITEM "Recent Window",               IDM_WINDOW_MRU_FIRST, GRAYED
+    END
+
     POPUP "&?"
     BEGIN
         MENUITEM "Command Line Arguments...",      IDM_CMDLINEARGUMENTS
@@ -1175,7 +1220,12 @@ BEGIN
         MENUITEM "About Notepad++",                IDM_ABOUT
     END
 
-    MENUITEM "X",    IDM_FILE_CLOSE, HELP
+    MENUITEM "＋",               IDM_FILE_NEW, HELP
+    POPUP "▼"
+    BEGIN
+        MENUITEM "Recent Window",               IDM_DROPLIST_LIST, GRAYED
+    END
+    MENUITEM "✕",               IDM_FILE_CLOSE, HELP
 END
 
 IDR_SYSTRAYPOPUP_MENU MENU
@@ -1205,6 +1255,13 @@ BEGIN
     //LTEXT           "FREE UYGHUR",IDC_AUTHOR_NAME,70,32,70,8
     //LTEXT           "Stand with Hong Kong",IDC_AUTHOR_NAME,70,32,80,8
     //LTEXT           "pour Samuel Paty",IDC_AUTHOR_NAME,70,32,80,8
+    //LTEXT           "Boycott Beijing 2022",IDC_AUTHOR_NAME,85,38,80,8
+    //LTEXT           "Declare variables, not war",IDC_AUTHOR_NAME,85,38,100,8
+    //LTEXT           "Make Apps, not war",IDC_AUTHOR_NAME,85,38,100,8
+    //LTEXT           "Stand Up For Ukraine",IDC_AUTHOR_NAME,85,38,100,8
+    //LTEXT           "Unhappy Users' Edition",IDC_AUTHOR_NAME,85,38,100,8
+    //LTEXT           "Happy Users' Edition",IDC_AUTHOR_NAME,85,38,100,8
+    //LTEXT           "I want to get a refund",IDC_HOME_ADDR,85,48,126,8
     LTEXT           "Home:",IDC_STATIC,21,58,47,8
     LTEXT           "https://notepad-plus-plus.org/",IDC_HOME_ADDR,50,58,126,8
     GROUPBOX        "GNU General Public Licence",IDC_STATIC,19,75,231,131,BS_CENTER

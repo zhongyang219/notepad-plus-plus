@@ -14,67 +14,89 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+#include <locale>
+#include <codecvt>
 #include "FileInterface.h"
+#include "Parameters.h"
 
-
-Win32_IO_File::Win32_IO_File(const char *fname, Mode fmode) : _hMode(fmode)
+Win32_IO_File::Win32_IO_File(const char *fname)
 {
 	if (fname)
 	{
-		DWORD access, share, disp, attrib;
-		fillCreateParams(access, share, disp, attrib);
-
-		_hFile = ::CreateFileA(fname, access, share, NULL, disp, attrib, NULL);
-	}
-
-	if ((_hFile != INVALID_HANDLE_VALUE) && (_hMode == Mode::APPEND))
-	{
-		LARGE_INTEGER offset;
-		offset.QuadPart = 0;
-
-		::SetFilePointerEx(_hFile, offset, NULL, FILE_END);
+		_path = fname;
+		_hFile = ::CreateFileA(fname, _accessParam, _shareParam, NULL, _dispParam, _attribParam, NULL);
 	}
 }
 
 
-Win32_IO_File::Win32_IO_File(const wchar_t *fname, Mode fmode) : _hMode(fmode)
+Win32_IO_File::Win32_IO_File(const wchar_t *fname)
 {
 	if (fname)
 	{
-		DWORD access, share, disp, attrib;
-		fillCreateParams(access, share, disp, attrib);
+		std::wstring fn = fname;
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		_path = converter.to_bytes(fn);
+		_hFile = ::CreateFileW(fname, _accessParam, _shareParam, NULL, _dispParam, _attribParam, NULL);
 
-		_hFile = ::CreateFileW(fname, access, share, NULL, disp, attrib, NULL);
-	}
+		NppParameters& nppParam = NppParameters::getInstance();
+		if (nppParam.isEndSessionStarted() && nppParam.doNppLogNulContentCorruptionIssue())
+		{
+			generic_string issueFn = nppLogNulContentCorruptionIssue;
+			issueFn += TEXT(".log");
+			generic_string nppIssueLog = nppParam.getUserPath();
+			pathAppend(nppIssueLog, issueFn);
 
-	if ((_hFile != INVALID_HANDLE_VALUE) && (_hMode == Mode::APPEND))
-	{
-		LARGE_INTEGER offset;
-		offset.QuadPart = 0;
-
-		::SetFilePointerEx(_hFile, offset, NULL, FILE_END);
+			std::string msg = _path;
+			msg += " is opened.";
+			writeLog(nppIssueLog.c_str(), msg.c_str());
+		}
 	}
 }
-
 
 void Win32_IO_File::close()
 {
 	if (isOpened())
 	{
+		DWORD flushError = NOERROR;
 		if (_written)
 		{
-			::SetEndOfFile(_hFile);
-			::FlushFileBuffers(_hFile);
+			if (!::FlushFileBuffers(_hFile))
+				flushError = ::GetLastError();
 		}
-
 		::CloseHandle(_hFile);
 
 		_hFile = INVALID_HANDLE_VALUE;
+
+
+		NppParameters& nppParam = NppParameters::getInstance();
+		if (nppParam.isEndSessionStarted() && nppParam.doNppLogNulContentCorruptionIssue())
+		{
+			generic_string issueFn = nppLogNulContentCorruptionIssue;
+			issueFn += TEXT(".log");
+			generic_string nppIssueLog = nppParam.getUserPath();
+			pathAppend(nppIssueLog, issueFn);
+
+
+			std::string msg;
+			if (flushError != NOERROR)
+			{
+				LPSTR messageBuffer = nullptr;
+				FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+					nullptr, flushError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, nullptr);
+				msg += messageBuffer;
+
+				//Free the buffer.
+				LocalFree(messageBuffer);
+				msg += "\n";
+			}
+			msg += _path;
+			msg += " is closed.";
+			writeLog(nppIssueLog.c_str(), msg.c_str());
+		}
 	}
 }
 
-
+/*
 int_fast64_t Win32_IO_File::getSize()
 {
 	LARGE_INTEGER r;
@@ -85,7 +107,6 @@ int_fast64_t Win32_IO_File::getSize()
 
 	return static_cast<int_fast64_t>(r.QuadPart);
 }
-
 
 unsigned long Win32_IO_File::read(void *rbuf, unsigned long buf_size)
 {
@@ -99,16 +120,53 @@ unsigned long Win32_IO_File::read(void *rbuf, unsigned long buf_size)
 
 	return bytes_read;
 }
+*/
 
 bool Win32_IO_File::write(const void *wbuf, unsigned long buf_size)
 {
-	if (!isOpened() || (wbuf == nullptr) || ((_hMode != Mode::WRITE) && (_hMode != Mode::APPEND)))
+	if (!isOpened() || (wbuf == nullptr))
 		return false;
 
 	DWORD bytes_written = 0;
 
+	NppParameters& nppParam = NppParameters::getInstance();
 	if (::WriteFile(_hFile, wbuf, buf_size, &bytes_written, NULL) == FALSE)
+	{
+		if (nppParam.isEndSessionStarted() && nppParam.doNppLogNulContentCorruptionIssue())
+		{
+			generic_string issueFn = nppLogNulContentCorruptionIssue;
+			issueFn += TEXT(".log");
+			generic_string nppIssueLog = nppParam.getUserPath();
+			pathAppend(nppIssueLog, issueFn);
+
+			std::string msg = _path;
+			msg += " written failed: ";
+			std::wstring lastErrorMsg = GetLastErrorAsString(::GetLastError());
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+			msg += converter.to_bytes(lastErrorMsg);
+			writeLog(nppIssueLog.c_str(), msg.c_str());
+		}
+
 		return false;
+	}
+	else
+	{
+		if (nppParam.isEndSessionStarted() && nppParam.doNppLogNulContentCorruptionIssue())
+		{
+			generic_string issueFn = nppLogNulContentCorruptionIssue;
+			issueFn += TEXT(".log");
+			generic_string nppIssueLog = nppParam.getUserPath();
+			pathAppend(nppIssueLog, issueFn);
+
+			std::string msg = _path;
+			msg += "  ";
+			msg += std::to_string(bytes_written);
+			msg += "/";
+			msg += std::to_string(buf_size);
+			msg += " bytes are written.";
+			writeLog(nppIssueLog.c_str(), msg.c_str());
+		}
+	}
 
 	if (!_written)
 		_written = true;
@@ -116,25 +174,3 @@ bool Win32_IO_File::write(const void *wbuf, unsigned long buf_size)
 	return (bytes_written == buf_size);
 }
 
-
-// Helper function to auto-fill CreateFile params optimized for Notepad++ usage.
-void Win32_IO_File::fillCreateParams(DWORD &access, DWORD &share, DWORD &disp, DWORD &attrib)
-{
-	access	= GENERIC_READ;
-	share = FILE_SHARE_READ;
-	attrib	= FILE_ATTRIBUTE_NORMAL | FILE_FLAG_POSIX_SEMANTICS; // Distinguish between upper/lower case in name
-
-	if (_hMode == Mode::READ)
-	{
-		disp	=	OPEN_EXISTING; // Open only if file exists and is not locked by other process
-
-		attrib	|=	FILE_FLAG_SEQUENTIAL_SCAN; // Optimize caching for sequential read
-	}
-	else
-	{
-		disp	=	OPEN_ALWAYS; // Open existing file for writing without destroying it or create new
-		share	|=	FILE_SHARE_WRITE;
-		access	|=	GENERIC_WRITE;
-		attrib	|=	FILE_FLAG_WRITE_THROUGH; // Write cached data directly to disk (no lazy writer)
-	}
-}

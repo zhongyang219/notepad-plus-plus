@@ -182,7 +182,7 @@ bool isInList(const TCHAR *token2Find, ParamVector& params, bool eraseArg = true
 		}
 	}
 	return false;
-};
+}
 
 bool getParamVal(TCHAR c, ParamVector & params, generic_string & value)
 {
@@ -238,7 +238,7 @@ generic_string getLocalizationPathFromParam(ParamVector & params)
 	return NppParameters::getLocPathFromStr(locStr.c_str());
 }
 
-int getNumberFromParam(char paramName, ParamVector & params, bool & isParamePresent)
+intptr_t getNumberFromParam(char paramName, ParamVector & params, bool & isParamePresent)
 {
 	generic_string numStr;
 	if (!getParamVal(paramName, params, numStr))
@@ -247,8 +247,8 @@ int getNumberFromParam(char paramName, ParamVector & params, bool & isParamePres
 		return -1;
 	}
 	isParamePresent = true;
-	return generic_atoi(numStr.c_str());
-};
+	return static_cast<intptr_t>(_ttoi64(numStr.c_str()));
+}
 
 generic_string getEasterEggNameFromParam(ParamVector & params, unsigned char & type)
 {
@@ -312,6 +312,8 @@ const TCHAR FLAG_OPEN_FOLDERS_AS_WORKSPACE[] = TEXT("-openFoldersAsWorkspace");
 const TCHAR FLAG_SETTINGS_DIR[] = TEXT("-settingsDir=");
 const TCHAR FLAG_TITLEBAR_ADD[] = TEXT("-titleAdd=");
 const TCHAR FLAG_APPLY_UDL[] = TEXT("-udl=");
+const TCHAR FLAG_PLUGIN_MESSAGE[] = TEXT("-pluginMessage=");
+const TCHAR FLAG_MONITOR_FILES[] = TEXT("-monitor");
 
 void doException(Notepad_plus_Window & notepad_plus_plus)
 {
@@ -443,18 +445,32 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 	cmdLineParams._isSessionFile = isInList(FLAG_OPENSESSIONFILE, params);
 	cmdLineParams._isRecursive = isInList(FLAG_RECURSIVE, params);
 	cmdLineParams._openFoldersAsWorkspace = isInList(FLAG_OPEN_FOLDERS_AS_WORKSPACE, params);
+	cmdLineParams._monitorFiles = isInList(FLAG_MONITOR_FILES, params);
 
 	cmdLineParams._langType = getLangTypeFromParam(params);
 	cmdLineParams._localizationPath = getLocalizationPathFromParam(params);
 	cmdLineParams._easterEggName = getEasterEggNameFromParam(params, cmdLineParams._quoteType);
 	cmdLineParams._ghostTypingSpeed = getGhostTypingSpeedFromParam(params);
 
+	generic_string pluginMessage;
+	if (getParamValFromString(FLAG_PLUGIN_MESSAGE, params, pluginMessage))
+	{
+		if (pluginMessage.length() >= 2)
+		{
+			if (pluginMessage.front() == '"' && pluginMessage.back() == '"')
+			{
+				pluginMessage = pluginMessage.substr(1, pluginMessage.length() - 2);
+			}
+		}
+		cmdLineParams._pluginMessage = pluginMessage;
+	}
+
 	// getNumberFromParam should be run at the end, to not consuming the other params
 	cmdLineParams._line2go = getNumberFromParam('n', params, isParamePresent);
     cmdLineParams._column2go = getNumberFromParam('c', params, isParamePresent);
     cmdLineParams._pos2go = getNumberFromParam('p', params, isParamePresent);
-	cmdLineParams._point.x = getNumberFromParam('x', params, cmdLineParams._isPointXValid);
-	cmdLineParams._point.y = getNumberFromParam('y', params, cmdLineParams._isPointYValid);
+	cmdLineParams._point.x = static_cast<LONG>(getNumberFromParam('x', params, cmdLineParams._isPointXValid));
+	cmdLineParams._point.y = static_cast<LONG>(getNumberFromParam('y', params, cmdLineParams._isPointYValid));
 
 	NppParameters& nppParameters = NppParameters::getInstance();
 
@@ -597,13 +613,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 				paramData.dwData = COPYDATA_PARAMS;
 				paramData.lpData = &dto;
 				paramData.cbData = sizeof(dto);
+				::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&paramData));
+
+				COPYDATASTRUCT cmdLineData;
+				cmdLineData.dwData = COPYDATA_FULL_CMDLINE;
+				cmdLineData.lpData = (void*)cmdLineString.c_str();
+				cmdLineData.cbData = long(cmdLineString.length() + 1) * (sizeof(TCHAR));
+				::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&cmdLineData));
 
 				COPYDATASTRUCT fileNamesData;
 				fileNamesData.dwData = COPYDATA_FILENAMES;
 				fileNamesData.lpData = (void *)quotFileName.c_str();
-				fileNamesData.cbData = long(quotFileName.length() + 1)*(sizeof(TCHAR));
-
-				::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&paramData));
+				fileNamesData.cbData = long(quotFileName.length() + 1) * (sizeof(TCHAR));
 				::SendMessage(hNotepad_plus, WM_COPYDATA, reinterpret_cast<WPARAM>(hInstance), reinterpret_cast<LPARAM>(&fileNamesData));
 			}
 			return 0;
@@ -640,8 +661,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int)
 	winVer ver = nppParameters.getWinVersion();
 	bool isGtXP = ver > WV_XP;
 
-	SecurityGard securityGard;
-	bool isSignatureOK = securityGard.checkModule(updaterFullPath, nm_gup);
+	SecurityGuard securityGuard;
+	bool isSignatureOK = securityGuard.checkModule(updaterFullPath, nm_gup);
 
 	if (TheFirstOne && isUpExist && isGtXP && isSignatureOK)
 	{

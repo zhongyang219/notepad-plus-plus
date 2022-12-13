@@ -49,7 +49,7 @@ public :
     };
 
 protected :
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 private :
     URLCtrl _emailLink;
@@ -70,16 +70,20 @@ public:
 
 	void doDialog();
 
+	void refreshDebugInfo();
+
 	virtual void destroy() {
 		_copyToClipboardLink.destroy();
 	};
 
 protected:
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	typedef const CHAR * (__cdecl * PWINEGETVERSION)();
 	generic_string _debugInfoStr;
+	generic_string _debugInfoDisplay;
+	const generic_string _cmdLinePlaceHolder { L"$COMMAND_LINE_PLACEHOLDER$" };
 	bool _isAdmin = false;
 	generic_string _loadedPlugins;
 	URLCtrl _copyToClipboardLink;
@@ -109,7 +113,7 @@ public:
 	void changeLang();
 
 protected:
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	int clickedButtonId = -1;
@@ -133,7 +137,7 @@ public:
 	void changeLang();
 
 protected:
-	virtual INT_PTR CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
+	virtual intptr_t CALLBACK run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	int clickedButtonId = -1;
